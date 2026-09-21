@@ -39,7 +39,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [ ] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud.
 
 **Server**
-- [ ] M1.6 `lib/supabase/{server,browser,middleware}.ts` + `src/middleware.ts` session refresh.
+- [ ] M1.6 `lib/supabase/{server,browser,proxy}.ts` + `src/proxy.ts` session refresh (Next 16 renamed `middleware.ts` to `proxy.ts`).
 - [ ] M1.7 `actions/auth.ts` `signInWithGoogle`; `app/auth/callback/route.ts`.
 - [ ] M1.8 `actions/profile.ts` `updateBudget` (sen in, Zod, `getUser()` check).
 - [ ] M1.9 `lib/money.ts` (sen ⇄ RM, `formatRM`) and `lib/dates.ts` (`todayMYT`, `monthRangeMYT`).

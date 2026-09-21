@@ -25,7 +25,7 @@ A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth +
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Framework | Next.js (App Router, latest stable 14+), React, TypeScript (strict) | Server Components for reads, Server Actions for writes |
+| Framework | Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Node 24 | Server Components for reads, Server Actions for writes; session refresh in `src/proxy.ts` (Next 16's name for `middleware.ts`) |
 | Styling / UI | Tailwind CSS, shadcn/ui, Lucide icons | shadcn `Drawer` for the Confirmation Card |
 | Charts | Recharts | Tap-to-show tooltips only |
 | Validation | Zod | Shared schemas for actions, AI output and forms |
@@ -515,7 +515,7 @@ skyfin/
 │   │   │   ├── server.ts           # session client for RSC/actions
 │   │   │   ├── browser.ts          # upload only
 │   │   │   ├── admin.ts            # service role, imported only by cron
-│   │   │   └── middleware.ts       # session refresh
+│   │   │   └── proxy.ts            # updateSession: refresh the session cookie
 │   │   ├── ai/
 │   │   │   ├── client.ts           # GoogleGenAI instance, server-only
 │   │   │   ├── parse-text.ts
@@ -532,7 +532,7 @@ skyfin/
 │   │   ├── dates.ts                # todayMYT, monthRangeMYT, isLastDayOfMonthMYT
 │   │   ├── i18n/                   # en.ts, zh.ts, ms.ts warning templates
 │   │   └── validation/schemas.ts
-│   └── middleware.ts
+│   └── proxy.ts                    # Next 16's middleware.ts: session refresh + auth redirect
 ├── tests/
 │   ├── unit/                       # accounting, money, dates, schemas
 │   ├── ai-eval/receipts/           # 20 test receipts + expected totals
