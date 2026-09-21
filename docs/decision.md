@@ -25,6 +25,7 @@ This document records architectural, operational, and organizational decisions f
 | D19 | Suggested budget | Auto-applied on the 1st, one-tap undo | 2026-09-21 | Approved |
 | D20 | Chat Q&A | Cut from v1 | 2026-09-21 | Approved |
 | **D21** | **Milestone Ownership & Git Worktree Isolation** | **M1 Owner: Claude** (branch `m1`, root repo: auth, Next.js foundation, budget onboarding).<br/>**M2 Owner: Antigravity** (branch `m2`, worktree `.worktrees/m2`: Confirmation Card, manual logging, categories, history, net cash flow).<br/>Integration via git merge once M1 passes real device demo. | 2026-09-21 | Approved |
+| D22 | Gemini access | Through Vertex AI with a service-account key that has only the Vertex AI User role. The key JSON is stored base64-encoded in the server-only env var `GOOGLE_SERVICE_ACCOUNT_KEY` (Sensitive in Vercel), replacing the AI Studio `GEMINI_API_KEY`. Still a paid tier, so D13 holds. | 2026-09-21 | Approved |
 
 ---
 
@@ -37,3 +38,15 @@ This document records architectural, operational, and organizational decisions f
   - **M1 Owner: Claude**. Operating in the main repository on branch `m1`. Owns `M1.1`–`M1.16` (Next.js app initialization, Supabase auth integration, initial budget onboarding, and M1 device demo).
   - **M2 Owner: Antigravity**. Operating in isolated Git worktree `.worktrees/m2` on branch `m2`. Owns `M2.1`–`M2.12` (Confirmation Card bottom sheet, category management, History page with day groups & filters, Dashboard Net Cash Flow card, schemas, server actions, and unit/e2e tests).
   - **Integration Strategy:** Antigravity maintains clean worktree isolation. Once Claude finishes M1 and confirms the real device demo, branch `m1` will be merged into `m2` (or vice-versa), running combined test suites (`npm test`, `npm run typecheck`, `npm run test:e2e`).
+
+### D22: Gemini through Vertex AI
+
+- **Context:** The docs assumed an AI Studio API key (`GEMINI_API_KEY`). Sky created a Vertex AI service-account key instead.
+- **Decision:**
+  - Gemini is called through Vertex AI: `new GoogleGenAI({ vertexai: true, project, location, googleAuthOptions: { credentials } })`. The SDK stays `@google/genai`; only the client setup changes.
+  - The service account has only the Vertex AI User role (`roles/aiplatform.user`).
+  - The key JSON is stored as one base64 line in `GOOGLE_SERVICE_ACCOUNT_KEY`: in `.env.local` locally, and as a Sensitive env var in Vercel. Only `src/lib/ai/client.ts` (`import "server-only"`) decodes it, so local and production share one code path.
+  - `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION` (default `global`) sit alongside it; `GEMINI_MODEL` is unchanged. M3.1 first confirms that the model ID answers in that location.
+- **Alternative not taken:** Vercel OIDC with GCP Workload Identity Federation keeps no long-lived key in production, but needs extra GCP setup and a different local code path.
+- **Risk:** the key is long-lived. Mitigations: the least-privilege role above, a GCP budget alert, `skyfin-*.json` gitignored and the key file kept outside the project, and delete-and-replace in GCP if it ever leaks.
+- **D13 holds:** Vertex AI is still a paid tier.

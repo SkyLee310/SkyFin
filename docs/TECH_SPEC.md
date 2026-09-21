@@ -12,7 +12,7 @@ A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth +
 
 ## 1. Principles
 
-1. **Server-only secrets.** Gemini, service-role and VAPID private keys never reach the browser. Every AI module starts with `import "server-only"`.
+1. **Server-only secrets.** The Google service-account key, the Supabase secret (service-role) key and the VAPID private key never reach the browser. Every AI module starts with `import "server-only"`.
 2. **RLS is the security boundary.** User-facing code uses the user's session client; only the cron route uses the service role.
 3. **Money is integer sen in code, `numeric(10,2)` in the database.** Convert at the boundary (`lib/money.ts`).
 4. **Business dates are MYT.** One `todayMYT()` helper; never `new Date()` for a business date.
@@ -31,12 +31,12 @@ A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth +
 | Validation | Zod | Shared schemas for actions, AI output and forms |
 | Dates | `date-fns` + `@date-fns/tz` | All business dates in `Asia/Kuala_Lumpur` |
 | Data access | `@supabase/ssr`, `@supabase/supabase-js` | Cookie session in Server Components/Actions |
-| AI | `@google/genai`, model from `GEMINI_MODEL` (default `gemini-3.5-flash`) | Structured output (`responseMimeType: application/json` + schema) |
+| AI | `@google/genai` on Vertex AI (`vertexai: true`, service-account key; D22), model from `GEMINI_MODEL` (default `gemini-3.5-flash`) | Structured output (`responseMimeType: application/json` + schema) |
 | PWA | `@serwist/next` (service worker), `app/manifest.ts` | Offline fallback page + push handler |
 | Push | `web-push` (VAPID) | iOS 16.4+ Home Screen apps only |
 | Image prep | Browser `createImageBitmap` + canvas → JPEG | Safari decodes HEIC natively, so no HEIC library |
 | Testing | Vitest (unit), Playwright (e2e, iPhone viewport) | |
-| Hosting | Vercel Hobby | One daily cron |
+| Hosting | Vercel Hobby, function region `sin1` (Singapore, same region as Supabase) | One daily cron |
 
 ---
 
@@ -449,8 +449,8 @@ export function evaluatePace(i: {
 
 | Service | Used for | Plan | Env vars | Limits / notes |
 |---|---|---|---|---|
-| Supabase | Postgres, Auth, Storage | Free | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Free projects pause after a period of inactivity; daily cron keeps it active |
-| Google Gemini API | Text parsing, receipts, audits | Paid tier (D13) | `GEMINI_API_KEY`, `GEMINI_MODEL` | App-level cap 100 calls/day via `ai_usage` |
+| Supabase | Postgres, Auth, Storage | Free | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_…`), `SUPABASE_SECRET_KEY` (`sb_secret_…`, acts as `service_role`) | Region Singapore. Free projects pause after a period of inactivity; daily cron keeps it active |
+| Gemini on Vertex AI (Google Cloud) | Text parsing, receipts, audits | Paid, billed to the GCP project (D13, D22) | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (default `global`), `GOOGLE_SERVICE_ACCOUNT_KEY` (key JSON, base64), `GEMINI_MODEL` | App-level cap 100 calls/day via `ai_usage`; the service account has only the Vertex AI User role |
 | Google Cloud OAuth client | Google provider for Supabase Auth | Free | configured in Supabase dashboard | Redirect URL = Supabase callback |
 | Vercel | Hosting, cron | Hobby (D18) | `CRON_SECRET` | One daily cron; timing approximate |
 | Web Push (Apple push via browser) | Warnings, audit-ready notices | Free | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | iOS 16.4+, Home Screen app only |
@@ -517,7 +517,7 @@ skyfin/
 │   │   │   ├── admin.ts            # service role, imported only by cron
 │   │   │   └── proxy.ts            # updateSession: refresh the session cookie
 │   │   ├── ai/
-│   │   │   ├── client.ts           # GoogleGenAI instance, server-only
+│   │   │   ├── client.ts           # GoogleGenAI on Vertex AI (decodes the service-account key), server-only
 │   │   │   ├── parse-text.ts
 │   │   │   ├── parse-receipt.ts
 │   │   │   ├── audit.ts
@@ -548,7 +548,9 @@ skyfin/
 
 - [ ] RLS on every table; `supabase/tests/rls.test.sql` proves a second user sees zero rows.
 - [ ] Composite FK prevents cross-user `category_id`.
-- [ ] `lib/supabase/admin.ts` and `lib/ai/*` import `server-only`; CI greps the client build for `GEMINI`, `SERVICE_ROLE`, `VAPID_PRIVATE`.
+- [ ] `lib/supabase/admin.ts` and `lib/ai/*` import `server-only`; CI greps the client build for `GEMINI`, `GOOGLE_SERVICE_ACCOUNT_KEY`, `BEGIN PRIVATE KEY`, `SUPABASE_SECRET_KEY`, `sb_secret_`, `VAPID_PRIVATE`.
+- [ ] The Vertex AI service account has only the Vertex AI User role (`roles/aiplatform.user`); a GCP budget alert is set; a leaked key is deleted in GCP and replaced (D22).
+- [ ] Supabase Auth sign-ups are disabled after Sky's first sign-in (D1); the Email provider stays off unless the D14 OTP fallback is in use.
 - [ ] Every action calls `getUser()` (not `getSession()`) before touching data.
 - [ ] Cron route rejects any request without the exact bearer token.
 - [ ] Storage bucket private; JPEG only; 2 MB cap enforced by the bucket.

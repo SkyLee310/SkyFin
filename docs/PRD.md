@@ -101,7 +101,7 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 - [ ] Google sign-in completes from the Home Screen app and the session survives closing and reopening it. If the iOS spike fails, email OTP replaces it (D14).
 - [ ] A request with another user's JWT returns zero rows from every table and every Storage path.
 - [ ] Inserting a transaction with another user's `category_id` is rejected.
-- [ ] No Gemini key or service-role key appears in the client bundle.
+- [ ] No Google service-account key or Supabase secret key appears in the client bundle.
 
 **F2 Monthly budget setting**
 - [ ] Budget can be set and edited in RM with 2 decimals, minimum RM 0.
@@ -228,6 +228,7 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D19 | Suggested budget | Auto-applied on the 1st, one-tap undo |
 | D20 | Chat Q&A | Cut from v1 |
 | D21 | Team & worktree ownership | M1 Owner: Claude (branch `m1`), M2 Owner: Antigravity (worktree `.worktrees/m2`, branch `m2`) |
+| D22 | Gemini access | Through Vertex AI with a service-account key (Vertex AI User role only), stored base64-encoded in the server-only env var `GOOGLE_SERVICE_ACCOUNT_KEY`; still a paid tier (D13) |
 
 ---
 

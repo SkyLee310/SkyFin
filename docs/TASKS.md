@@ -94,7 +94,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 **Demo:** Chat: "Makan nasi lemak RM8.50 pakai eWallet" → card pre-filled (RM 8.50, Food & Drinks, eWallet, Needs) → Save. Then "nasi lemak 8.50, boba 12" → two stacked drafts, boba = Wants → "actually boba RM13" → draft updates → Save both. Then "semalam grab RM15" → date = yesterday, payment method unset → must tap one. Then "今天午餐 RM10 现金" → reply in Chinese.
 
 **Server**
-- [ ] M3.1 `lib/ai/client.ts` (`server-only`, `GEMINI_API_KEY`, `GEMINI_MODEL`).
+- [ ] M3.1 `lib/ai/client.ts` (`server-only`; Vertex AI via `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `GOOGLE_SERVICE_ACCOUNT_KEY`; `GEMINI_MODEL`). First confirm the model ID answers in that location (D22).
 - [ ] M3.2 `lib/ai/prompts/parse-text.ts` + `lib/ai/parse-text.ts`: JSON schema output, category names in prompt, map unknown category → Others, amounts → sen, Zod re-validate, one retry.
 - [ ] M3.3 `actions/ai.ts` `parseTextEntry`: `consume_ai_call()` first; returns `{reply, language, drafts}`; writes `preferred_language`.
 - [ ] M3.4 Non-logging messages (questions, small talk) → one-line reply pointing to Dashboard/History, no drafts (D20).
