@@ -1,0 +1,40 @@
+# Secrets: .env files stay on this machine; only the names-only .env.example is committed
+.env*
+!.env.example
+*.pem
+client_secret*.json
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Next.js build output
+/.next/
+/out/
+/build/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Serwist service worker, generated from src/app/sw.ts at build time
+public/sw.js*
+public/swe-worker*
+
+# Test output
+/coverage/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Vercel and Supabase CLI local state
+.vercel
+supabase/.branches
+supabase/.temp
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
