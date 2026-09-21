@@ -35,7 +35,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [ ] M1.3 Connect repo to Vercel; production deploy on push to `main`.
 
 **DB**
-- [ ] M1.4 Migration `0001_init.sql` (all tables, RLS, functions, new-user trigger) — full file from TECH_SPEC §4.2.
+- [x] M1.4 Migration `0001_init.sql` (all tables, RLS, functions, new-user trigger) — full file from TECH_SPEC §4.2.
 - [ ] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud.
 
 **Server**
@@ -52,7 +52,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [ ] M1.14 Dashboard budget card: remaining, budget, days left (no projection yet).
 
 **Test**
-- [ ] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from `profiles`.
+- [x] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from `profiles`.
 - [x] M1.16 Unit tests for `money.ts` and `dates.ts` (23:59 / 00:01 MYT, month ends, February).
 
 **Done when:** demo passes on a real iPhone; F1 criteria 1–2 and F2 criteria pass.

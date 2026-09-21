@@ -310,7 +310,25 @@ begin
 end $$;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ============ GRANTS ============
+-- New Supabase projects (auto_expose_new_tables = false) give the Data API roles no DML on new
+-- tables, but they keep truncate, references and trigger, and Postgres grants execute on new
+-- functions to public. Revoke all, then grant, so the result is the same on old and new
+-- defaults; RLS still decides which rows each user sees.
+revoke all on table public.profiles, public.categories, public.transactions,
+  public.audit_reports, public.push_subscriptions, public.ai_usage
+  from anon, authenticated, service_role;
+grant select, insert, update, delete on table public.profiles, public.categories,
+  public.transactions, public.audit_reports, public.push_subscriptions, public.ai_usage
+  to authenticated, service_role;
+revoke all on function public.consume_ai_call(int), public.receipts_to_purge(),
+  public.handle_new_user() from public, anon, authenticated, service_role;
+grant execute on function public.consume_ai_call(int) to authenticated;
+grant execute on function public.receipts_to_purge() to service_role;
 ```
+
+`handle_new_user` keeps no `execute` grant: Postgres checks it only when the trigger is created, so sign-ups (GoTrue runs as `supabase_auth_admin`) still seed the profile and categories.
 
 ### 4.3 Storage `supabase/migrations/0002_storage.sql`
 
@@ -470,10 +488,11 @@ skyfin/
 ├── public/
 │   └── icons/                      # 192, 512, maskable, apple-touch-icon
 ├── supabase/
+│   ├── config.toml                 # local stack; auto_expose_new_tables = false, like the cloud project
 │   ├── migrations/
 │   │   ├── 0001_init.sql
 │   │   └── 0002_storage.sql
-│   └── tests/rls.test.sql          # cross-user isolation checks
+│   └── tests/rls.test.sql          # pgTAP: cross-user isolation and exact Data API privileges
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx              # html, theme, safe-area
@@ -548,6 +567,7 @@ skyfin/
 ## 8. Security checklist
 
 - [ ] RLS on every table; `supabase/tests/rls.test.sql` proves a second user sees zero rows.
+- [ ] Every migration that creates a table or function revokes all privileges from `anon`, `authenticated` and `service_role` (and `public` for functions), then grants only what the app needs: the defaults still give those roles `truncate`, `references` and `trigger` on new tables and `execute` on new functions. `rls.test.sql` asserts the exact set for each role.
 - [ ] Composite FK prevents cross-user `category_id`.
 - [ ] `lib/supabase/admin.ts` and `lib/ai/*` import `server-only`; CI greps the client build for `GEMINI`, `GOOGLE_SERVICE_ACCOUNT_KEY`, `BEGIN PRIVATE KEY`, `SUPABASE_SECRET_KEY`, `sb_secret_`, `VAPID_PRIVATE`.
 - [ ] The Vertex AI service account has only the Vertex AI User role (`roles/aiplatform.user`); a GCP budget alert is set; a leaked key is deleted in GCP and replaced (D22).
@@ -564,7 +584,7 @@ skyfin/
 | Level | What | Tool |
 |---|---|---|
 | Unit | `evaluatePace` table tests (incl. S = 0, B = 0, day 1–2, spike, excluded rows), `money.ts` rounding, `dates.ts` around 23:59 / 00:01 MYT and month ends | Vitest, with `TZ=UTC` as on Vercel |
-| DB | RLS isolation, composite FK rejection, `dedup_key` uniqueness, `consume_ai_call` cap | SQL tests against a Supabase branch |
+| DB | RLS isolation, table and function privileges, composite FK rejection, `dedup_key` uniqueness, `consume_ai_call` cap | pgTAP files in `supabase/tests`, run with `npx supabase test db` against the local stack (branching needs a paid plan) |
 | AI eval | 20 receipts → totals within RM 0.00; 30 chat phrases (EN/ZH/MS/Rojak) → expected drafts | Vitest script, run manually before each model change |
 | E2E | Each milestone's demo script in TASKS.md | Playwright, iPhone viewport |
 | Device | Home Screen install, sign-in, push receipt | Real iPhone, per milestone |
