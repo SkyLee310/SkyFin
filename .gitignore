@@ -3,6 +3,8 @@
 !.env.example
 *.pem
 client_secret*.json
+# Google Cloud service-account keys, downloaded as <project-id>-<key-id>.json
+skyfin-*.json
 
 # Dependencies
 /node_modules
@@ -38,3 +40,9 @@ supabase/.temp
 *.log
 .DS_Store
 Thumbs.db
+
+# Worktrees
+.worktrees
+.worktrees/
+worktrees
+worktrees/
