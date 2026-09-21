@@ -39,14 +39,14 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [ ] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud.
 
 **Server**
-- [ ] M1.6 `lib/supabase/{server,browser,proxy}.ts` + `src/proxy.ts` session refresh (Next 16 renamed `middleware.ts` to `proxy.ts`).
-- [ ] M1.7 `actions/auth.ts` `signInWithGoogle`; `app/auth/callback/route.ts`.
+- [x] M1.6 `lib/supabase/{server,browser,proxy}.ts` + `src/proxy.ts` session refresh (Next 16 renamed `middleware.ts` to `proxy.ts`).
+- [x] M1.7 `actions/auth.ts` `signInWithGoogle`; `app/auth/callback/route.ts`.
 - [ ] M1.8 `actions/profile.ts` `updateBudget` (sen in, Zod, `getUser()` check).
 - [x] M1.9 `lib/money.ts` (sen ⇄ RM, `formatRM`) and `lib/dates.ts` (`todayMYT`, `monthRangeMYT`).
 
 **UI**
 - [ ] M1.10 `app/manifest.ts`, icons, `apple-touch-icon`, standalone display, theme colour, safe-area CSS.
-- [ ] M1.11 `login/page.tsx` with Google button.
+- [x] M1.11 `login/page.tsx` with Google button.
 - [ ] M1.12 `(app)/layout.tsx` with bottom nav (4 tabs; Chat/History/Audit show "Coming soon").
 - [ ] M1.13 Onboarding step 1: set monthly budget (sheet shown when budget = 0).
 - [ ] M1.14 Dashboard budget card: remaining, budget, days left (no projection yet).

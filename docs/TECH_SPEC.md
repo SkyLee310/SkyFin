@@ -521,6 +521,7 @@ skyfin/
 │   │   └── audits.ts
 │   ├── components/
 │   │   ├── ui/                     # shadcn generated
+│   │   ├── auth/google-sign-in-button.tsx
 │   │   ├── nav/bottom-nav.tsx
 │   │   ├── confirmation-card/      # sheet, draft-row, split-editor, payment-toggle
 │   │   ├── chat/                   # message-list, composer, receipt-button
@@ -586,7 +587,7 @@ skyfin/
 | Unit | `evaluatePace` table tests (incl. S = 0, B = 0, day 1–2, spike, excluded rows), `money.ts` rounding, `dates.ts` around 23:59 / 00:01 MYT and month ends | Vitest, with `TZ=UTC` as on Vercel |
 | DB | RLS isolation, table and function privileges, composite FK rejection, `dedup_key` uniqueness, `consume_ai_call` cap | pgTAP files in `supabase/tests`, run with `npx supabase test db` against the local stack (branching needs a paid plan) |
 | AI eval | 20 receipts → totals within RM 0.00; 30 chat phrases (EN/ZH/MS/Rojak) → expected drafts | Vitest script, run manually before each model change |
-| E2E | Each milestone's demo script in TASKS.md | Playwright, iPhone viewport |
+| E2E | Each milestone's demo script in TASKS.md, run against the local Supabase stack. Google can't run in a test: the callback test signs in through an emailed PKCE link read from Mailpit, and other tests start as a fresh email/password user | Playwright, iPhone 15 (WebKit), dev server on port 3100 |
 | Device | Home Screen install, sign-in, push receipt | Real iPhone, per milestone |
 
 ---
