@@ -227,6 +227,7 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D18 | Hosting plan | Vercel Hobby (free); cron timing approximate |
 | D19 | Suggested budget | Auto-applied on the 1st, one-tap undo |
 | D20 | Chat Q&A | Cut from v1 |
+| D21 | Team & worktree ownership | M1 Owner: Claude (branch `m1`), M2 Owner: Antigravity (worktree `.worktrees/m2`, branch `m2`) |
 
 ---
 

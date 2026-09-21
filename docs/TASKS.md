@@ -7,15 +7,15 @@
 
 Seven milestones. Each one is a **vertical slice**: it touches DB → server → UI, is deployed to Vercel, and ends with a demo you can do on the iPhone. No milestone starts until the previous demo passes on a real device.
 
-| # | Slice (demo in one line) | Features | Size |
-|---|---|---|---|
-| M1 | Install to Home Screen → sign in → set budget → see "RM 800 left" | F1, F2 | M |
-| M2 | Tap "+" → fill card → save → see it in History → Dashboard number drops | F5, F7, F8 | M |
-| M3 | Type "nasi lemak 8.50 pakai eWallet" → card pre-filled → save | F3 | M |
-| M4 | Snap receipt → card pre-filled → split → saved with photo | F4, F6 | L |
-| M5 | Overspend → banner appears → charts show where it went | F9, F10 | M |
-| M6 | Close the app → evening push arrives → tap opens the warning | F11, F15 | M |
-| M7 | Sunday push → weekly audit with boba leak + 3 tips; month end → new budget applied | F12, F13 | M |
+| # | Slice (demo in one line) | Features | Size | Owner |
+|---|---|---|---|---|
+| M1 | Install to Home Screen → sign in → set budget → see "RM 800 left" | F1, F2 | M | Claude |
+| M2 | Tap "+" → fill card → save → see it in History → Dashboard number drops | F5, F7, F8 | M | Antigravity |
+| M3 | Type "nasi lemak 8.50 pakai eWallet" → card pre-filled → save | F3 | M | — |
+| M4 | Snap receipt → card pre-filled → split → saved with photo | F4, F6 | L | — |
+| M5 | Overspend → banner appears → charts show where it went | F9, F10 | M | — |
+| M6 | Close the app → evening push arrives → tap opens the warning | F11, F15 | M | — |
+| M7 | Sunday push → weekly audit with boba leak + 3 tips; month end → new budget applied | F12, F13 | M | — |
 
 Sizes: S ≈ half a day, M ≈ 1–3 days, L ≈ 3–5 days (single developer, rough).
 
@@ -23,15 +23,15 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ---
 
-## M1 — Sign in and see my budget
+## M1 — Sign in and see my budget (Owner: Claude)
 
 **Demo:** On the iPhone, open the Vercel URL in Safari → Add to Home Screen → open from the icon → Sign in with Google → set budget RM 800 → Dashboard shows "RM 800.00 left of RM 800.00". Close and reopen from the icon: still signed in.
 
 **Spike first (day 1, time-box 4 h):** Google OAuth round-trip inside the standalone iOS app (risk R1). If the session does not come back to the Home Screen app, switch to email OTP (D14) and continue.
 
 **Setup**
-- [ ] M1.1 Create Next.js app (TypeScript strict, Tailwind, ESLint), add shadcn/ui, Lucide.
-- [ ] M1.2 Create Supabase project; add `.env.example` and Vercel env vars.
+- [x] M1.1 Create Next.js app (TypeScript strict, Tailwind, ESLint), add shadcn/ui, Lucide.
+- [x] M1.2 Create Supabase project; add `.env.example` and Vercel env vars.
 - [ ] M1.3 Connect repo to Vercel; production deploy on push to `main`.
 
 **DB**
@@ -59,7 +59,9 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ---
 
-## M2 — Log an expense by hand and see it everywhere
+## M2 — Log an expense by hand and see it everywhere (Owner: Antigravity)
+
+> **Status:** Implemented and tested in isolated git worktree `.worktrees/m2` on branch `m2`. Awaiting M1 device demo completion before merging to integrate.
 
 **Demo:** Chat tab → "+" → Confirmation Card: RM 12.50, Food & Drinks, Wants, eWallet → Save → History shows it under today → Dashboard shows RM 787.50 left. Edit it to RM 15.00 → both update. Add a custom category "Printing" → use it → archive it → old row still shows "Printing".
 
