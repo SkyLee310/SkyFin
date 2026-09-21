@@ -25,18 +25,20 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M1 — Sign in and see my budget (Owner: Claude)
 
+> **Status (2026-09-21):** M1.1, M1.4, M1.6, M1.7, M1.9–M1.11, M1.15 and M1.16 are committed on branch `m1`, not yet pushed to `main`. Waiting on Sky for the cloud setup (the rest of M1.2, then M1.5 and M1.3), the OK to push to `main`, and the iPhone spike. After the spike: M1.8, M1.12–M1.14, M1.17 and M1.18, then the device demo.
+
 **Demo:** On the iPhone, open the Vercel URL in Safari → Add to Home Screen → open from the icon → Sign in with Google → set budget RM 800 → Dashboard shows "RM 800.00 left of RM 800.00". Close and reopen from the icon: still signed in.
 
 **Spike first (day 1, time-box 4 h):** Google OAuth round-trip inside the standalone iOS app (risk R1). If the session does not come back to the Home Screen app, switch to email OTP (D14) and continue.
 
 **Setup**
 - [x] M1.1 Create Next.js app (TypeScript strict, Tailwind, ESLint), add shadcn/ui, Lucide.
-- [x] M1.2 Create Supabase project; add `.env.example` and Vercel env vars.
-- [ ] M1.3 Connect repo to Vercel; production deploy on push to `main`.
+- [ ] M1.2 Create Supabase project; add `.env.example` and Vercel env vars. `.env.example` is done (names per D22, D24). Left for Sky: create the project (Singapore); `supabase link` and `db push` of 0001 before the first sign-in, so the new-user trigger creates the profile and preset categories; the Vercel env vars during M1.3.
+- [ ] M1.3 Connect repo to Vercel; production deploy on push to `main`. Function region `sin1` (D28). In Supabase Auth, set the Site URL to the production URL and add `<production URL>/auth/callback` and `http://localhost:3000/auth/callback` to the redirect URLs.
 
 **DB**
 - [x] M1.4 Migration `0001_init.sql` (all tables, RLS, functions, new-user trigger) — full file from TECH_SPEC §4.2.
-- [ ] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud.
+- [ ] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud. After Sky's first sign-in, turn off new sign-ups (D26).
 
 **Server**
 - [x] M1.6 `lib/supabase/{server,browser,proxy}.ts` + `src/proxy.ts` session refresh (Next 16 renamed `middleware.ts` to `proxy.ts`).
@@ -52,10 +54,12 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [ ] M1.14 Dashboard budget card: remaining, budget, days left (no projection yet).
 
 **Test**
-- [x] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from `profiles`.
+- [x] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from every table; exact grants asserted (D25).
 - [x] M1.16 Unit tests for `money.ts` and `dates.ts` (23:59 / 00:01 MYT, month ends, February).
+- [ ] M1.17 E2E `tests/e2e/onboarding.spec.ts` (F2): a new user sees "Set your monthly budget" and the sheet; set RM 800 → "RM 800.00 left of RM 800.00"; with an expense dated this month, edit to RM 850.50 → the card updates at once and still deducts that expense; RM 0 is accepted; negative amounts and 3 decimals are rejected.
+- [ ] M1.18 `scripts/check-client-bundle.mjs` as the `postbuild` script (F1 criterion 4): `npm run build` fails, locally and on Vercel, if `.next/static` contains any TECH_SPEC §8 pattern.
 
-**Done when:** demo passes on a real iPhone; F1 criteria 1–2 and F2 criteria pass.
+**Done when:** demo passes on a real iPhone; F1 criteria 1, 2 (tables; Storage paths in M4.12) and 4 pass; all F2 criteria pass. F1 criterion 3 is tested in M2.1.
 
 ---
 

@@ -26,6 +26,12 @@ This document records architectural, operational, and organizational decisions f
 | D20 | Chat Q&A | Cut from v1 | 2026-09-21 | Approved |
 | **D21** | **Milestone Ownership & Git Worktree Isolation** | **M1 Owner: Claude** (branch `m1`, root repo: auth, Next.js foundation, budget onboarding).<br/>**M2 Owner: Antigravity** (branch `m2`, worktree `.worktrees/m2`: Confirmation Card, manual logging, categories, history, net cash flow).<br/>Integration via git merge once M1 passes real device demo. | 2026-09-21 | Approved |
 | D22 | Gemini access | Through Vertex AI with a service-account key that has only the Vertex AI User role. The key JSON is stored base64-encoded in the server-only env var `GOOGLE_SERVICE_ACCOUNT_KEY` (Sensitive in Vercel), replacing the AI Studio `GEMINI_API_KEY`. Still a paid tier, so D13 holds. | 2026-09-21 | Approved |
+| D23 | Next.js version | Next.js 16: `src/proxy.ts` replaces `middleware.ts`; `npm run lint` runs `eslint .` because `next lint` was removed; `agentRules: false` in `next.config.ts` stops `next dev` from rewriting CLAUDE.md and AGENTS.md. Not taken: pinning Next 15 to keep `middleware.ts`. | 2026-09-21 | Approved |
+| D24 | Supabase API keys | The new `sb_publishable_…` / `sb_secret_…` keys, in `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY`, replacing `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`. The app needs only the URL and the publishable key; the secret key is for the cron route alone. | 2026-09-21 | Approved |
+| D25 | Table and function grants | `0001_init.sql` ends with an explicit GRANTS block, and every later migration grants explicitly; `anon` gets nothing; pgTAP asserts the exact privileges. Supabase stopped granting new tables to the Data API roles. See the record below. | 2026-09-21 | Approved |
+| D26 | Sign-up lock | After Sky's first production sign-in, turn off new sign-ups in Supabase Auth; the Email provider stays off unless D14 is used. Must be done before M3. See the record below. | 2026-09-21 | Approved |
+| D27 | Test database | pgTAP and E2E run on the local Supabase Docker stack, never the cloud project (Branching needs a paid plan). E2E signs up fresh email/password users, and runs a PKCE email-link sign-in through Mailpit to exercise `/auth/callback`, since Google sign-in can't run in a test. | 2026-09-21 | Approved |
+| D28 | Function region | Vercel functions run in `sin1` (Singapore), next to the Supabase project; the Hobby default `iad1` would add a US–Singapore round trip to every query. | 2026-09-21 | Approved |
 
 ---
 
@@ -35,7 +41,7 @@ This document records architectural, operational, and organizational decisions f
 
 - **Context:** Milestone 1 (Foundation & Google Sign-in) and Milestone 2 (Manual Logging & History) need fast delivery while avoiding git workspace collisions.
 - **Decision:**
-  - **M1 Owner: Claude**. Operating in the main repository on branch `m1`. Owns `M1.1`–`M1.16` (Next.js app initialization, Supabase auth integration, initial budget onboarding, and M1 device demo).
+  - **M1 Owner: Claude**. Operating in the main repository on branch `m1`. Owns `M1.1`–`M1.18` (Next.js app initialization, Supabase auth integration, initial budget onboarding, and M1 device demo).
   - **M2 Owner: Antigravity**. Operating in isolated Git worktree `.worktrees/m2` on branch `m2`. Owns `M2.1`–`M2.12` (Confirmation Card bottom sheet, category management, History page with day groups & filters, Dashboard Net Cash Flow card, schemas, server actions, and unit/e2e tests).
   - **Integration Strategy:** Antigravity maintains clean worktree isolation. Once Claude finishes M1 and confirms the real device demo, branch `m1` will be merged into `m2` (or vice-versa), running combined test suites (`npm test`, `npm run typecheck`, `npm run test:e2e`).
 
@@ -50,3 +56,21 @@ This document records architectural, operational, and organizational decisions f
 - **Alternative not taken:** Vercel OIDC with GCP Workload Identity Federation keeps no long-lived key in production, but needs extra GCP setup and a different local code path.
 - **Risk:** the key is long-lived. Mitigations: the least-privilege role above, a GCP budget alert, `skyfin-*.json` gitignored and the key file kept outside the project, and delete-and-replace in GCP if it ever leaks.
 - **D13 holds:** Vertex AI is still a paid tier.
+
+### D25: Explicit grants on every table and function
+
+- **Context:** Supabase no longer grants the Data API roles (`anon`, `authenticated`, `service_role`) access to new tables: from 2026-05-30 for new projects, and from 2026-10-30 for existing ones. TECH_SPEC §4.2 as first written had no GRANT statements, so every query on a new project would fail with `42501 permission denied`.
+- **Decision:**
+  - `0001_init.sql` ends with a GRANTS block. It revokes everything, then grants `select, insert, update, delete` on the six tables to `authenticated` and `service_role`, and nothing to `anon`.
+  - Functions: `consume_ai_call` is executable by `authenticated` only, `receipts_to_purge` by `service_role` only, and `handle_new_user` by nobody (it runs as a trigger).
+  - Every later migration that creates a table or function grants explicitly, and `supabase/tests/rls.test.sql` asserts the exact privilege set with `table_privs_are` and `function_privs_are`.
+  - The local `supabase/config.toml` sets `auto_expose_new_tables = false`, so the local stack starts from the same default as the cloud project.
+- **Why revoke first:** tables created under the old default get every privilege; under the new default they still keep `truncate`, `references` and `trigger`; and Postgres grants `execute` on new functions to `public`. Revoking first leaves the same set under both defaults.
+- **RLS is unchanged:** grants decide whether a role may touch a table at all; RLS still decides which rows it sees.
+
+### D26: Lock sign-ups after Sky's first sign-in
+
+- **Context:** While sign-ups are open, anyone with the public publishable key can create an account. From M3 on, each account can spend up to 100 Gemini calls a day on Sky's bill.
+- **Decision:** after Sky's first production Google sign-in (M1.5), turn off "Allow new users to sign up" in Supabase Auth. The Email provider stays off unless the D14 OTP fallback is used; then Email stays on, with sign-ups still off. This must be done before M3.
+- **Alternative not taken:** a before-user-created Auth hook that admits only Sky's Gmail. It needs code and a migration; the dashboard switch gets the same result with neither.
+- **Risk:** if Sky's auth user is ever deleted, sign-ups must be turned on briefly to sign in again. `db push` must come before the first sign-in, because the new-user trigger creates the profile and preset categories only when the auth user is inserted.

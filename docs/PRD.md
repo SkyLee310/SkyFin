@@ -229,6 +229,12 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D20 | Chat Q&A | Cut from v1 |
 | D21 | Team & worktree ownership | M1 Owner: Claude (branch `m1`), M2 Owner: Antigravity (worktree `.worktrees/m2`, branch `m2`) |
 | D22 | Gemini access | Through Vertex AI with a service-account key (Vertex AI User role only), stored base64-encoded in the server-only env var `GOOGLE_SERVICE_ACCOUNT_KEY`; still a paid tier (D13) |
+| D23 | Next.js version | Next.js 16: `src/proxy.ts` instead of `middleware.ts`, `eslint .` instead of the removed `next lint`, `agentRules: false` |
+| D24 | Supabase keys | `sb_publishable_…` / `sb_secret_…` in `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY` |
+| D25 | Table grants | Every migration grants table and function access explicitly; `anon` gets nothing; pgTAP asserts it (Supabase stopped granting new tables automatically) |
+| D26 | Sign-up lock | Sign-ups off after Sky's first sign-in, before M3; Email provider off unless D14 |
+| D27 | Test database | pgTAP and E2E run on the local Supabase stack, never the cloud project |
+| D28 | Function region | Vercel functions in `sin1` (Singapore), next to Supabase |
 
 ---
 
