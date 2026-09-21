@@ -42,7 +42,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [ ] M1.6 `lib/supabase/{server,browser,proxy}.ts` + `src/proxy.ts` session refresh (Next 16 renamed `middleware.ts` to `proxy.ts`).
 - [ ] M1.7 `actions/auth.ts` `signInWithGoogle`; `app/auth/callback/route.ts`.
 - [ ] M1.8 `actions/profile.ts` `updateBudget` (sen in, Zod, `getUser()` check).
-- [ ] M1.9 `lib/money.ts` (sen ⇄ RM, `formatRM`) and `lib/dates.ts` (`todayMYT`, `monthRangeMYT`).
+- [x] M1.9 `lib/money.ts` (sen ⇄ RM, `formatRM`) and `lib/dates.ts` (`todayMYT`, `monthRangeMYT`).
 
 **UI**
 - [ ] M1.10 `app/manifest.ts`, icons, `apple-touch-icon`, standalone display, theme colour, safe-area CSS.
@@ -53,7 +53,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 **Test**
 - [ ] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from `profiles`.
-- [ ] M1.16 Unit tests for `money.ts` and `dates.ts` (23:59 / 00:01 MYT, month ends, February).
+- [x] M1.16 Unit tests for `money.ts` and `dates.ts` (23:59 / 00:01 MYT, month ends, February).
 
 **Done when:** demo passes on a real iPhone; F1 criteria 1–2 and F2 criteria pass.
 

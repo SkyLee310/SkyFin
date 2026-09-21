@@ -528,8 +528,9 @@ skyfin/
 │   │   ├── queries/                # dashboard.ts, history.ts, audits.ts, stats.ts
 │   │   ├── push.ts                 # sendPush, prune dead endpoints
 │   │   ├── image.ts                # client resize → JPEG
-│   │   ├── money.ts                # sen ⇄ RM, formatRM
-│   │   ├── dates.ts                # todayMYT, monthRangeMYT, isLastDayOfMonthMYT
+│   │   ├── money.ts                # parseRMToSen, numericToSen, senToNumeric, formatRM
+│   │   ├── dates.ts                # todayMYT, monthRangeMYT, isLastDayOfMonthMYT,
+│   │   │                           #   daysLeftInMonthMYT = D − d + 1 (today counts; last day shows 1)
 │   │   ├── i18n/                   # en.ts, zh.ts, ms.ts warning templates
 │   │   └── validation/schemas.ts
 │   └── proxy.ts                    # Next 16's middleware.ts: session refresh + auth redirect
@@ -562,7 +563,7 @@ skyfin/
 
 | Level | What | Tool |
 |---|---|---|
-| Unit | `evaluatePace` table tests (incl. S = 0, B = 0, day 1–2, spike, excluded rows), `money.ts` rounding, `dates.ts` around 23:59 / 00:01 MYT and month ends | Vitest |
+| Unit | `evaluatePace` table tests (incl. S = 0, B = 0, day 1–2, spike, excluded rows), `money.ts` rounding, `dates.ts` around 23:59 / 00:01 MYT and month ends | Vitest, with `TZ=UTC` as on Vercel |
 | DB | RLS isolation, composite FK rejection, `dedup_key` uniqueness, `consume_ai_call` cap | SQL tests against a Supabase branch |
 | AI eval | 20 receipts → totals within RM 0.00; 30 chat phrases (EN/ZH/MS/Rojak) → expected drafts | Vitest script, run manually before each model change |
 | E2E | Each milestone's demo script in TASKS.md | Playwright, iPhone viewport |
