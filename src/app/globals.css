@@ -136,3 +136,12 @@
     @apply font-sans;
   }
 }
+
+/*
+ * layout.tsx sets viewport-fit=cover, so the page runs under the iPhone home
+ * indicator: bars pinned to the bottom of the screen add pb-safe. The default
+ * status bar style keeps its own space, so the top needs no inset.
+ */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}

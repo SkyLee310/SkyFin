@@ -45,7 +45,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [x] M1.9 `lib/money.ts` (sen ⇄ RM, `formatRM`) and `lib/dates.ts` (`todayMYT`, `monthRangeMYT`).
 
 **UI**
-- [ ] M1.10 `app/manifest.ts`, icons, `apple-touch-icon`, standalone display, theme colour, safe-area CSS.
+- [x] M1.10 `app/manifest.ts`, icons, `apple-touch-icon`, standalone display, theme colour, safe-area CSS.
 - [x] M1.11 `login/page.tsx` with Google button.
 - [ ] M1.12 `(app)/layout.tsx` with bottom nav (4 tabs; Chat/History/Audit show "Coming soon").
 - [ ] M1.13 Onboarding step 1: set monthly budget (sheet shown when budget = 0).
