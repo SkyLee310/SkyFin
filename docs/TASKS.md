@@ -25,7 +25,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M1 — Sign in and see my budget (Owner: Claude)
 
-> **Status (2026-09-21):** M1.1, M1.4, M1.6, M1.7, M1.9–M1.11, M1.15 and M1.16 are committed on branch `m1`, not yet pushed to `main`. Waiting on Sky for the cloud setup (the rest of M1.2, then M1.5 and M1.3), the OK to push to `main`, and the iPhone spike. After the spike: M1.8, M1.12–M1.14, M1.17 and M1.18, then the device demo.
+> **Status (2026-09-22):** M1.1, M1.4, M1.6, M1.7, M1.9–M1.11, M1.15 and M1.16 are committed on branch `m1`, not yet pushed to `main`. Cloud setup is done: Supabase project + migration 0001 (Singapore, `ap-southeast-1`), Vercel project `skyfin-ai` (region `sin1`, env vars, connected to `SkyLee310/SkyFin`), Supabase Auth Site URL/redirect URLs, and Google OAuth client + provider (M1.5) are all in place. That's every M1.6/M1.7/M1.10/M1.11-dependent prerequisite for the Phase C spike — next is Sky's OK to push `m1` to `main` and run the iPhone Home Screen OAuth round-trip. After the spike passes: M1.8, M1.12–M1.14, M1.17 and M1.18, then the device demo.
 
 **Demo:** On the iPhone, open the Vercel URL in Safari → Add to Home Screen → open from the icon → Sign in with Google → set budget RM 800 → Dashboard shows "RM 800.00 left of RM 800.00". Close and reopen from the icon: still signed in.
 
@@ -33,12 +33,14 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 **Setup**
 - [x] M1.1 Create Next.js app (TypeScript strict, Tailwind, ESLint), add shadcn/ui, Lucide.
-- [ ] M1.2 Create Supabase project; add `.env.example` and Vercel env vars. `.env.example` is done (names per D22, D24). Left for Sky: create the project (Singapore); `supabase link` and `db push` of 0001 before the first sign-in, so the new-user trigger creates the profile and preset categories; the Vercel env vars during M1.3.
+- [x] M1.2 Create Supabase project; add `.env.example` and Vercel env vars. `.env.example` is done (names per D22, D24). Project created and migration 0001 pushed via the Supabase MCP (2026-09-22): ref `xhtuoanhtssydvwfkfbz`, region `ap-southeast-1`; all 6 tables have RLS on, grants match D25, and `get_advisors` reports zero security lints. `.env.local` updated with the real project URL and publishable key. Vercel env vars added by Sky during M1.3 (2026-09-22).
 - [ ] M1.3 Connect repo to Vercel; production deploy on push to `main`. Function region `sin1` (D28). In Supabase Auth, set the Site URL to the production URL and add `<production URL>/auth/callback` and `http://localhost:3000/auth/callback` to the redirect URLs.
+  - **Progress (2026-09-22):** GitHub App access fixed by Sky; repo imports into Vercel correctly now. Sky created and deployed the project (`skyfin-ai`, team `skylee310s-projects`, production URL `https://skyfin-ai.vercel.app`) through the Vercel dashboard, since the Vercel MCP's `create_git_project` kept failing. The Vercel MCP's single-project calls (`get_project`, `update_project`, `create_project_env`) still 404 on this project even though `list_projects` sees it intermittently — looks like a bug/lag between Vercel's list and single-resource endpoints. Worked around by having Sky set Function Region (`sin1`) and the two `NEXT_PUBLIC_SUPABASE_*` env vars (Production + Preview) directly in the dashboard, and set the Supabase Auth Site URL to `https://skyfin-ai.vercel.app` with `http://localhost:3000/auth/callback` and `https://skyfin-ai.vercel.app/auth/callback` in the redirect URLs.
+  - **Still open:** `main` has no app code yet (it's all on branch `m1`), so there's no real production deploy to verify yet — that happens at the Phase C spike push-to-main gate. Leave this box unchecked until that push succeeds and the Home Screen OAuth round-trip passes.
 
 **DB**
 - [x] M1.4 Migration `0001_init.sql` (all tables, RLS, functions, new-user trigger) — full file from TECH_SPEC §4.2.
-- [ ] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud. After Sky's first sign-in, turn off new sign-ups (D26).
+- [x] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud (2026-09-22, done by Sky). Turning off new sign-ups (D26) still waits on Sky's first production sign-in — do that during the iPhone spike.
 
 **Server**
 - [x] M1.6 `lib/supabase/{server,browser,proxy}.ts` + `src/proxy.ts` session refresh (Next 16 renamed `middleware.ts` to `proxy.ts`).
