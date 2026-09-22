@@ -65,3 +65,13 @@ function splitSen(sen: number): { sign: string; ringgit: string; cents: string }
     cents: String(rem).padStart(2, "0"),
   };
 }
+
+/** Alias for numericToSen. */
+export function toSen(rm: number | string): number {
+  return numericToSen(rm);
+}
+
+/** Convert integer sen to RM float (e.g. 1250 -> 12.5). */
+export function toRM(sen: number): number {
+  return sen / 100;
+}

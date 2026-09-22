@@ -2,7 +2,7 @@
 -- Run with `npx supabase test db` against the local stack. Everything rolls back at the end.
 -- User A is aaaaaaaa-…, user B is bbbbbbbb-…; B plays the attacker.
 begin;
-select plan(48);
+select plan(49);
 
 -- ============ FIXTURES (as postgres, which owns the tables and so bypasses RLS) ============
 insert into auth.users (id, email) values
@@ -133,6 +133,20 @@ select throws_ok(
      values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '2000-01-02', 0) $$,
   '42501', 'new row violates row-level security policy for table "ai_usage"',
   'B cannot add AI usage for A');
+
+-- M2.1: Composite FK prevents B from referencing A's category, even when user_id = B passes RLS
+select throws_ok(
+  $$ insert into public.transactions (user_id, amount, category_id, type, payment_method)
+     values (
+       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+       10.00,
+       (select id from public.categories where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' limit 1),
+       'expense',
+       'Cash'
+     ) $$,
+  '23503',
+  null,
+  'Composite FK prevents B from referencing A''s category');
 
 -- consume_ai_call is security invoker, so this needs the grants and B's own RLS to line up.
 select is(public.consume_ai_call(), true, 'B can call consume_ai_call');
