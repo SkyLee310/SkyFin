@@ -54,3 +54,8 @@ function daysInMonthOf(year: number, month: number): number {
   }
   return month === 4 || month === 6 || month === 9 || month === 11 ? 30 : 31;
 }
+
+/** Whether dateStr (YYYY-MM-DD) is strictly after today in MYT. */
+export function isFutureDateMYT(dateStr: string, now: Date = new Date()): boolean {
+  return dateStr > todayMYT(now);
+}

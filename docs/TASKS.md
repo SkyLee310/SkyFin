@@ -67,29 +67,29 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M2 — Log an expense by hand and see it everywhere (Owner: Antigravity)
 
-> **Status:** Implemented and tested in isolated git worktree `.worktrees/m2` on branch `m2`. Awaiting M1 device demo completion before merging to integrate.
+> **Status:** Implemented and verified against latest main. PR raised for review and merge.
 
 **Demo:** Chat tab → "+" → Confirmation Card: RM 12.50, Food & Drinks, Wants, eWallet → Save → History shows it under today → Dashboard shows RM 787.50 left. Edit it to RM 15.00 → both update. Add a custom category "Printing" → use it → archive it → old row still shows "Printing".
 
 **DB**
-- [ ] M2.1 Verify composite FK: inserting another user's `category_id` fails (add to `rls.test.sql`).
+- [x] M2.1 Verify composite FK: inserting another user's `category_id` fails (add to `rls.test.sql`).
 
 **Server**
-- [ ] M2.2 `lib/validation/schemas.ts`: `Draft`, `SaveInput`, `ActionResult`.
-- [ ] M2.3 `actions/transactions.ts`: `saveTransactions`, `updateTransaction`, `deleteTransaction` (no image handling yet).
-- [ ] M2.4 `actions/categories.ts`: list, create, rename, archive.
-- [ ] M2.5 `lib/queries/history.ts` (filters: month, category, payment method, Needs/Wants) and `lib/queries/dashboard.ts` (budget remaining, net cash flow).
+- [x] M2.2 `lib/validation/schemas.ts`: `Draft`, `SaveInput`, `ActionResult`.
+- [x] M2.3 `actions/transactions.ts`: `saveTransactions`, `updateTransaction`, `deleteTransaction` (no image handling yet).
+- [x] M2.4 `actions/categories.ts`: list, create, rename, archive.
+- [x] M2.5 `lib/queries/history.ts` (filters: month, category, payment method, Needs/Wants) and `lib/queries/dashboard.ts` (budget remaining, net cash flow).
 
 **UI**
-- [ ] M2.6 `components/confirmation-card/` sheet: amount (sen-based input), merchant, date (max today), category selector + "Add new", Needs/Wants toggle (hidden for income), payment toggle, note; Save disabled until valid.
-- [ ] M2.7 Chat tab: "+" opens an empty card (chat input comes in M3).
-- [ ] M2.8 History page: day groups, filters, tap → edit card, delete with confirm.
-- [ ] M2.9 Dashboard: net cash flow card.
-- [ ] M2.10 Category management list in Audit tab settings.
+- [x] M2.6 `components/confirmation-card/` sheet: amount (sen-based input), merchant, date (max today), category selector + "Add new", Needs/Wants toggle (hidden for income), payment toggle, note; Save disabled until valid.
+- [x] M2.7 Chat tab: "+" opens an empty card (chat input comes in M3).
+- [x] M2.8 History page: day groups, filters, tap → edit card, delete with confirm.
+- [x] M2.9 Dashboard: net cash flow card.
+- [x] M2.10 Category management list in Audit tab settings.
 
 **Test**
-- [ ] M2.11 E2E: add → edit → delete; totals on Dashboard match.
-- [ ] M2.12 Unit: `Draft` schema rejects future dates, zero amounts, missing payment method on save.
+- [x] M2.11 E2E: add → edit → delete; totals on Dashboard match.
+- [x] M2.12 Unit: `Draft` schema rejects future dates, zero amounts, missing payment method on save.
 
 **Done when:** demo passes; F5 criteria 1, 2, 4; F7 criteria 1–2; F8 criteria 1, 3 (check re-runs in M5).
 

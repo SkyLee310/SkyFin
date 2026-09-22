@@ -74,3 +74,13 @@ This document records architectural, operational, and organizational decisions f
 - **Decision:** after Sky's first production Google sign-in (M1.5), turn off "Allow new users to sign up" in Supabase Auth. The Email provider stays off unless the D14 OTP fallback is used; then Email stays on, with sign-ups still off. This must be done before M3.
 - **Alternative not taken:** a before-user-created Auth hook that admits only Sky's Gmail. It needs code and a migration; the dashboard switch gets the same result with neither.
 - **Risk:** if Sky's auth user is ever deleted, sign-ups must be turned on briefly to sign in again. `db push` must come before the first sign-in, because the new-user trigger creates the profile and preset categories only when the auth user is inserted.
+
+### D29: Server Component / Client Component split for History page and server queries
+
+- **Context:** `src/lib/queries/history.ts` and `src/lib/queries/dashboard.ts` use `@/lib/supabase/server` which imports `cookies` from `next/headers`. Importing server queries directly inside a Client Component (`"use client"`) triggers Next.js Turbopack build failure: `"You're importing a module that depends on 'next/headers'. This API is only available in Server Components in the App Router"`.
+- **Decision:**
+  - Adhere strictly to the AGENTS.md rule: "Reads run in Server Components through `src/lib/queries/*`".
+  - `src/app/(app)/history/page.tsx` is an async Server Component that reads URL `searchParams` and runs `getTransactionsHistory()` and `listCategories()`.
+  - Client interactivity (filter dropdowns, bottom sheet drawer, delete confirmation dialog) is encapsulated in `src/app/(app)/history/history-view.tsx` (`"use client"`), which only imports types from queries and executes mutations via Server Actions (`deleteTransaction`, `revalidatePath`).
+  - Add `import "server-only"` to `src/lib/queries/history.ts` and `src/lib/queries/dashboard.ts` to prevent accidental bundling into client bundles at build time.
+
