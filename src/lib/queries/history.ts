@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient } from "@/lib/supabase/server";
 import { monthRangeMYT, todayMYT } from "@/lib/dates";
 import { toSen } from "@/lib/money";

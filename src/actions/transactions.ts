@@ -8,6 +8,7 @@ import {
   ActionResult,
 } from "@/lib/validation/schemas";
 import { randomUUID } from "crypto";
+import { revalidatePath } from "next/cache";
 
 export interface TransactionRecord {
   id: string;
@@ -86,6 +87,8 @@ export async function saveTransactions(
   }
 
   const ids = (data as { id: string }[]).map((r) => r.id);
+  revalidatePath("/history");
+  revalidatePath("/");
   return { ok: true, data: { ids } };
 }
 
@@ -132,6 +135,8 @@ export async function updateTransaction(params: {
     return { ok: false, code: "NOT_FOUND", message: error?.message || "Transaction not found" };
   }
 
+  revalidatePath("/history");
+  revalidatePath("/");
   return { ok: true, data: { id: (data as { id: string }).id } };
 }
 
@@ -158,5 +163,7 @@ export async function deleteTransaction(params: {
     return { ok: false, code: "NOT_FOUND", message: error.message };
   }
 
+  revalidatePath("/history");
+  revalidatePath("/");
   return { ok: true, data: { id: params.id } };
 }
