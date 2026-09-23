@@ -70,8 +70,3 @@ function splitSen(sen: number): { sign: string; ringgit: string; cents: string }
 export function toSen(rm: number | string): number {
   return numericToSen(rm);
 }
-
-/** Convert integer sen to RM float (e.g. 1250 -> 12.5). */
-export function toRM(sen: number): number {
-  return sen / 100;
-}

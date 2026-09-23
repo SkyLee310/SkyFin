@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { toRM } from "@/lib/money";
+import { senToNumeric } from "@/lib/money";
 import {
   SaveInput,
   Draft,
@@ -57,7 +57,7 @@ export async function saveTransactions(
 
   const rowsToInsert = drafts.map((d) => ({
     user_id: user.id,
-    amount: toRM(d.amountSen),
+    amount: senToNumeric(d.amountSen),
     category_id: d.categoryId,
     type: d.type,
     payment_method: d.paymentMethod,
@@ -111,7 +111,7 @@ export async function updateTransaction(params: {
   };
 
   const { patch } = params;
-  if (patch.amountSen !== undefined) updateFields.amount = toRM(patch.amountSen);
+  if (patch.amountSen !== undefined) updateFields.amount = senToNumeric(patch.amountSen);
   if (patch.categoryId !== undefined) updateFields.category_id = patch.categoryId;
   if (patch.type !== undefined) updateFields.type = patch.type;
   if (patch.paymentMethod !== undefined && patch.paymentMethod !== null) {

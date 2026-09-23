@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { formatRM } from "@/lib/money";
+import { formatRM, toSen } from "@/lib/money";
 import type { Category } from "@/actions/categories";
 import { deleteTransaction } from "@/actions/transactions";
 import type { DayGroup, HistoryItem } from "@/lib/queries/history";
@@ -253,7 +253,7 @@ export function HistoryView({
                             }`}
                           >
                             {isIncome ? "+" : "-"}
-                            {formatRM(Math.round(tx.amount * 100))}
+                            {formatRM(toSen(tx.amount))}
                           </span>
 
                           <button
@@ -320,7 +320,7 @@ export function HistoryView({
           initialDraft={{
             id: editItem.id,
             type: editItem.type,
-            amountSen: Math.round(editItem.amount * 100),
+            amountSen: toSen(editItem.amount),
             categoryId: editItem.category_id,
             paymentMethod: editItem.payment_method,
             merchant: editItem.merchant,

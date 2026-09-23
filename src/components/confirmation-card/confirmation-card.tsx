@@ -36,12 +36,22 @@ function ConfirmationCardForm({
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [type, setType] = useState<"expense" | "income">(initialDraft?.type || "expense");
   const [amountSen, setAmountSen] = useState(initialDraft?.amountSen || 0);
+  const [categoryId, setCategoryId] = useState(initialDraft?.categoryId || "");
 
-  const initialCatId = initialDraft?.categoryId || (() => {
-    const firstCat = initialCategories.find((c) => c.kind === (initialDraft?.type || "expense") && !c.archived);
-    return firstCat ? firstCat.id : "";
-  })();
-  const [categoryId, setCategoryId] = useState(initialCatId);
+  // Chat's "+" button can open this form before its client-side category fetch resolves.
+  // Adjust state during this render (not in an effect) when the list arrives late, so
+  // there's no extra commit; default categoryId then without clobbering a choice the
+  // user (or an edit draft) already made.
+  const [prevInitialCategories, setPrevInitialCategories] = useState(initialCategories);
+  if (initialCategories !== prevInitialCategories) {
+    setPrevInitialCategories(initialCategories);
+    setCategories(initialCategories);
+    setCategoryId((prev) => {
+      if (prev || initialDraft?.categoryId) return prev;
+      const firstCat = initialCategories.find((c) => c.kind === type && !c.archived);
+      return firstCat ? firstCat.id : prev;
+    });
+  }
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(initialDraft?.paymentMethod || null);
   const [merchant, setMerchant] = useState(initialDraft?.merchant || "");
