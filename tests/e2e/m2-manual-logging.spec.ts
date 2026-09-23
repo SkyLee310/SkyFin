@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { createSignedInUser } from "./support/session";
 
 test.describe("M2: Manual Logging Flow (iPhone 15)", () => {
+  test.beforeEach(async ({ context, baseURL }) => {
+    const user = await createSignedInUser(baseURL!);
+    await context.addCookies(user.cookies);
+  });
+
   test("Confirmation Card UI elements and validation behavior", async ({ page }) => {
     // Navigate to Chat tab
     await page.goto("/chat");
@@ -79,7 +85,7 @@ test.describe("M2: Manual Logging Flow (iPhone 15)", () => {
 
     // Verify Dashboard sections
     await expect(page.getByText("SkyFin")).toBeVisible();
-    await expect(page.getByText("Monthly Budget")).toBeVisible();
+    await expect(page.getByText("Monthly Budget", { exact: true })).toBeVisible();
     await expect(page.getByText("Net Cash Flow")).toBeVisible();
   });
 });
