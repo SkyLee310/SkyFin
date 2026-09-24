@@ -92,13 +92,15 @@ function ConfirmationCardForm({
   const currencyWarning = !!initialDraft?.currencyWarning;
 
   const startSplit = () => {
-    const other = categories.find((c) => c.kind === "expense" && !c.archived && c.id !== categoryId);
+    const expense = categories.filter((c) => c.kind === "expense" && !c.archived);
+    const first = categoryId || expense[0]?.id || "";
+    const other = expense.find((c) => c.id !== first);
     setSplitRows([
-      { key: crypto.randomUUID(), amountSen, categoryId, isEssential },
+      { key: crypto.randomUUID(), amountSen, categoryId: first, isEssential },
       {
         key: crypto.randomUUID(),
         amountSen: 0,
-        categoryId: other?.id ?? categoryId,
+        categoryId: other?.id ?? first,
         isEssential: other?.default_essential ?? true,
       },
     ]);

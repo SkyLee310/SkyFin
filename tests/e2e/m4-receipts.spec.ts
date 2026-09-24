@@ -197,3 +197,24 @@ test("History shows the split as one collapsed group with its photo; deleting bo
   await expect(page.getByText("No transactions found")).toBeVisible();
   await expect.poll(storedReceipts).toEqual([]);
 });
+
+test("at the daily AI cap the photo is kept and the card opens empty to fill by hand", async ({ page }) => {
+  const today = new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10);
+  const { error } = await user.supabase.from("ai_usage").insert({ user_id: user.userId, day: today, calls: 100 });
+  if (error) throw error;
+
+  await snap(page, 600, 1000);
+  await expect(page.getByText("Daily AI limit reached. Fill in the card by hand; the photo is attached.")).toBeVisible();
+  await expect(page.getByText("New Transaction")).toBeVisible();
+  await expect(page.locator("#receipt-thumbnail")).toBeVisible();
+  await expect(page.locator("#confirmation-amount-input")).toHaveValue("");
+  expect(await storedReceipts()).toHaveLength(1);
+
+  await page.locator("#confirmation-amount-input").fill("42.30");
+  await page.locator("#category-selector-dropdown").selectOption({ label: "Groceries" });
+  await page.locator("#payment-method-cash").click();
+  await page.locator("#btn-confirm-save").click();
+  await expect(page.getByText("Transaction recorded successfully!")).toBeVisible();
+  const { data: rows } = await user.supabase.from("transactions").select("amount, receipt_url, receipt_group_id");
+  expect(rows).toEqual([{ amount: 42.3, receipt_url: (await storedReceipts())[0], receipt_group_id: null }]);
+});

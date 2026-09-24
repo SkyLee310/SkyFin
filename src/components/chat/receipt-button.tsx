@@ -11,7 +11,7 @@ export type ReceiptStage = { stage: "preparing" } | { stage: "uploading"; percen
 export type ReceiptOutcome =
   | { kind: "draft"; path: string; previewUrl: string; draft: Draft }
   /** Uploaded but not read (daily cap, or the model failed): log it by hand with the photo. */
-  | { kind: "manual"; path: string; previewUrl: string; message: string }
+  | { kind: "manual"; path: string; previewUrl: string; code: "AI_LIMIT" | "AI_FAILED" }
   | { kind: "error"; message: string };
 
 interface ReceiptButtonsProps {
@@ -64,7 +64,7 @@ export function ReceiptButtons({ disabled, onStage, onOutcome }: ReceiptButtonsP
       if (res.ok) {
         onOutcome({ kind: "draft", path: upload.data.path, previewUrl, draft: res.data.draft });
       } else if (res.code === "AI_LIMIT" || res.code === "AI_FAILED") {
-        onOutcome({ kind: "manual", path: upload.data.path, previewUrl, message: res.message });
+        onOutcome({ kind: "manual", path: upload.data.path, previewUrl, code: res.code });
       } else {
         URL.revokeObjectURL(previewUrl);
         onOutcome({ kind: "error", message: res.message });

@@ -26,8 +26,18 @@ export async function encodeUnderTarget(
   return blob;
 }
 
+/** Decodes with the photo's EXIF rotation; older Safari rejects the option, so retry without it. */
+async function decode(file: Blob): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch (error) {
+    if (error instanceof TypeError) return createImageBitmap(file);
+    throw error;
+  }
+}
+
 export async function prepareReceiptImage(file: Blob): Promise<Blob> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const bitmap = await decode(file);
   try {
     const { width, height } = fitWithin(bitmap.width, bitmap.height);
     const canvas = document.createElement("canvas");
