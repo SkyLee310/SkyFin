@@ -8,7 +8,8 @@ import { deleteTransaction } from "@/actions/transactions";
 import type { DayGroup, HistoryItem } from "@/lib/queries/history";
 import type { PaymentMethod } from "@/lib/validation/schemas";
 import { ConfirmationCard } from "@/components/confirmation-card/confirmation-card";
-import { Trash2, AlertCircle, Clock } from "lucide-react";
+import { Trash2, AlertCircle, Clock, ChevronDown, Receipt } from "lucide-react";
+import { groupReceiptRows } from "@/lib/history-groups";
 
 interface HistoryViewProps {
   initialMonth: string;
@@ -17,6 +18,21 @@ interface HistoryViewProps {
   initialEssential: boolean | null;
   categories: Category[];
   dayGroups: DayGroup[];
+  /** Signed thumbnail URLs keyed by receipt path. */
+  receiptUrls: Record<string, string>;
+}
+
+function ReceiptThumb({ url }: { url?: string }) {
+  return (
+    <span className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg overflow-hidden border border-slate-200 bg-slate-100 text-slate-400">
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed Storage URL
+        <img src={url} alt="Receipt" className="w-full h-full object-cover" />
+      ) : (
+        <Receipt className="w-4 h-4" />
+      )}
+    </span>
+  );
 }
 
 export function HistoryView({
@@ -26,6 +42,7 @@ export function HistoryView({
   initialEssential,
   categories,
   dayGroups,
+  receiptUrls,
 }: HistoryViewProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -84,6 +101,85 @@ export function HistoryView({
   const handleEditClick = (item: HistoryItem) => {
     setEditItem(item);
     setIsEditOpen(true);
+  };
+
+  // Receipt groups start collapsed; tap to expand.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (groupId: string) =>
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+
+  const renderRow = (tx: HistoryItem, { nested = false } = {}) => {
+    const isIncome = tx.type === "income";
+    return (
+      <div
+        key={tx.id}
+        data-testid="history-row"
+        className="flex items-center justify-between p-3.5 hover:bg-slate-50/80 transition-colors"
+      >
+        {!nested && tx.receipt_url && (
+          <span className="mr-3">
+            <ReceiptThumb url={receiptUrls[tx.receipt_url]} />
+          </span>
+        )}
+        {/* Tap row to edit */}
+        <div
+          className="flex-1 flex flex-col cursor-pointer mr-3 min-w-0"
+          onClick={() => handleEditClick(tx)}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm text-slate-900 line-clamp-1 capitalize">
+              {nested ? tx.category_name : tx.merchant || tx.item_label || tx.category_name}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-slate-100 text-slate-600">
+              {tx.category_name}
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-slate-100 text-slate-500">
+              {tx.payment_method}
+            </span>
+            {!isIncome && (
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
+                  tx.is_essential
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-amber-50 text-amber-700"
+                }`}
+              >
+                {tx.is_essential ? "Needs" : "Wants"}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Amount & Actions */}
+        <div className="flex items-center gap-3">
+          <span
+            className={`font-bold text-sm ${
+              isIncome ? "text-emerald-600" : "text-slate-900"
+            }`}
+          >
+            {isIncome ? "+" : "-"}
+            {formatRM(toSen(tx.amount))}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setDeleteTargetId(tx.id)}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            aria-label="Delete transaction"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -204,67 +300,38 @@ export function HistoryView({
                   </div>
                 </div>
 
-                {/* Rows in Day */}
+                {/* Rows in Day; split receipts collapse into one group (FR-24) */}
                 <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 shadow-sm overflow-hidden">
-                  {group.transactions.map((tx) => {
-                    const isIncome = tx.type === "income";
+                  {groupReceiptRows(group.transactions).map((entry) => {
+                    if (entry.kind === "row") return renderRow(entry.row);
+                    const isOpen = expandedGroups.has(entry.groupId);
                     return (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between p-3.5 hover:bg-slate-50/80 transition-colors"
-                      >
-                        {/* Tap row to edit */}
-                        <div
-                          className="flex-1 flex flex-col cursor-pointer mr-3"
-                          onClick={() => handleEditClick(tx)}
+                      <div key={entry.groupId} data-testid="receipt-group">
+                        <button
+                          type="button"
+                          aria-expanded={isOpen}
+                          onClick={() => toggleGroup(entry.groupId)}
+                          className="w-full min-h-[56px] flex items-center gap-3 p-3.5 text-left hover:bg-slate-50/80 transition-colors"
                         >
-                          <div className="flex items-center gap-2">
+                          <ReceiptThumb url={entry.receiptUrl ? receiptUrls[entry.receiptUrl] : undefined} />
+                          <span className="flex-1 flex flex-col min-w-0">
                             <span className="font-semibold text-sm text-slate-900 line-clamp-1">
-                              {tx.merchant || tx.category_name}
+                              {entry.merchant || "Receipt"}
                             </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-slate-100 text-slate-600">
-                              {tx.category_name}
+                            <span className="text-[11px] text-slate-500 mt-0.5">
+                              {entry.rows.length} items · {entry.rows[0]!.payment_method}
                             </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-slate-100 text-slate-500">
-                              {tx.payment_method}
-                            </span>
-                            {!isIncome && (
-                              <span
-                                className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
-                                  tx.is_essential
-                                    ? "bg-emerald-50 text-emerald-700"
-                                    : "bg-amber-50 text-amber-700"
-                                }`}
-                              >
-                                {tx.is_essential ? "Needs" : "Wants"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Amount & Actions */}
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`font-bold text-sm ${
-                              isIncome ? "text-emerald-600" : "text-slate-900"
-                            }`}
-                          >
-                            {isIncome ? "+" : "-"}
-                            {formatRM(toSen(tx.amount))}
                           </span>
-
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTargetId(tx.id)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            aria-label="Delete transaction"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                          <span className="font-bold text-sm text-slate-900">-{formatRM(entry.totalSen)}</span>
+                          <ChevronDown
+                            className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {isOpen && (
+                          <div className="bg-slate-50/60 divide-y divide-slate-100 border-t border-slate-100 pl-4">
+                            {entry.rows.map((tx) => renderRow(tx, { nested: true }))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
