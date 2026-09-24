@@ -118,13 +118,13 @@ function ConfirmationCardForm({
       }
     } else {
       const draftObj = {
-        clientId: crypto.randomUUID(),
+        clientId: initialDraft?.clientId || crypto.randomUUID(),
         type,
         amountSen,
         categoryId,
         paymentMethod,
         merchant: merchant.trim() || null,
-        itemLabel: null,
+        itemLabel: initialDraft?.itemLabel ?? null,
         note: note.trim() || null,
         date,
         isEssential: type === "expense" ? isEssential : true,
@@ -313,7 +313,7 @@ export function ConfirmationCard({
   initialDraft,
   onSuccess,
 }: ConfirmationCardProps) {
-  const formKey = open ? (initialDraft?.id || "new-entry") : "closed";
+  const formKey = open ? (initialDraft?.id || initialDraft?.clientId || "new-entry") : "closed";
 
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
