@@ -1,10 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { createSignedInUser } from "./support/session";
+import { createSignedInUser, setBudget } from "./support/session";
 
 test.describe("M2: Manual Logging Flow (iPhone 15)", () => {
   test.beforeEach(async ({ context, baseURL }) => {
     const user = await createSignedInUser(baseURL!);
     await context.addCookies(user.cookies);
+    // A zero-budget user gets the onboarding sheet, which would cover the page under test.
+    await setBudget(user.supabase, user.userId, 80000);
   });
 
   test("Confirmation Card UI elements and validation behavior", async ({ page }) => {

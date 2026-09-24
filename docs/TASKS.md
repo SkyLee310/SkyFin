@@ -25,40 +25,40 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M1 — Sign in and see my budget (Owner: Claude)
 
-> **Status (2026-09-22):** M1.1, M1.4, M1.6, M1.7, M1.9–M1.11, M1.15 and M1.16 are committed on branch `m1`, not yet pushed to `main`. Cloud setup is done: Supabase project + migration 0001 (Singapore, `ap-southeast-1`), Vercel project `skyfin-ai` (region `sin1`, env vars, connected to `SkyLee310/SkyFin`), Supabase Auth Site URL/redirect URLs, and Google OAuth client + provider (M1.5) are all in place. That's every M1.6/M1.7/M1.10/M1.11-dependent prerequisite for the Phase C spike — next is Sky's OK to push `m1` to `main` and run the iPhone Home Screen OAuth round-trip. After the spike passes: M1.8, M1.12–M1.14, M1.17 and M1.18, then the device demo.
+> **Status (2026-09-22):** `m1` is pushed to `main` (Sky approved) and live at `https://skyfin-ai.vercel.app`. Google OAuth is confirmed working in production, including from the iOS Home Screen icon — this fixed an initial `Unsupported provider: provider is not enabled` error, which turned out to be a real Google Cloud OAuth client never having been created (Supabase's "Client IDs" field needs the actual Google-issued client ID, not a free-text name). 3 of the 4 Phase C spike checks have passed on Sky's iPhone: initial Home Screen sign-in, force-quit/reopen persistence, and delete/re-add-icon fresh sign-in. The 4th — reopening after over an hour to confirm silent token refresh — is still pending; it needs real elapsed time so it'll be confirmed whenever Sky next opens the app after a long gap. D26 (turn off new sign-ups) is now actionable since Sky's first production sign-in has happened. M2 reached `main` first (PR #1, PR #2), so the rest of the M1 budget slice (M1.8, M1.12–M1.14, M1.17) was reconciled onto M2's Dashboard through branch `m1-budget` (2026-09-24) instead of merging `m1`. Remaining M1 work: M1.18 (bundle check), then the real-device M1 demo.
 
-**Demo:** On the iPhone, open the Vercel URL in Safari → Add to Home Screen → open from the icon → Sign in with Google → set budget RM 800 → Dashboard shows "RM 800.00 left of RM 800.00". Close and reopen from the icon: still signed in.
+**Demo:** On the iPhone, open the Vercel URL in Safari → Add to Home Screen → open from the icon → Sign in with Google → set budget RM 800 → Dashboard shows "RM 800.00" with "left" beside it and "Spent RM 0.00 of RM 800.00" below. Close and reopen from the icon: still signed in.
 
 **Spike first (day 1, time-box 4 h):** Google OAuth round-trip inside the standalone iOS app (risk R1). If the session does not come back to the Home Screen app, switch to email OTP (D14) and continue.
 
 **Setup**
 - [x] M1.1 Create Next.js app (TypeScript strict, Tailwind, ESLint), add shadcn/ui, Lucide.
 - [x] M1.2 Create Supabase project; add `.env.example` and Vercel env vars. `.env.example` is done (names per D22, D24). Project created and migration 0001 pushed via the Supabase MCP (2026-09-22): ref `xhtuoanhtssydvwfkfbz`, region `ap-southeast-1`; all 6 tables have RLS on, grants match D25, and `get_advisors` reports zero security lints. `.env.local` updated with the real project URL and publishable key. Vercel env vars added by Sky during M1.3 (2026-09-22).
-- [ ] M1.3 Connect repo to Vercel; production deploy on push to `main`. Function region `sin1` (D28). In Supabase Auth, set the Site URL to the production URL and add `<production URL>/auth/callback` and `http://localhost:3000/auth/callback` to the redirect URLs.
+- [x] M1.3 Connect repo to Vercel; production deploy on push to `main`. Function region `sin1` (D28). In Supabase Auth, set the Site URL to the production URL and add `<production URL>/auth/callback` and `http://localhost:3000/auth/callback` to the redirect URLs.
   - **Progress (2026-09-22):** GitHub App access fixed by Sky; repo imports into Vercel correctly now. Sky created and deployed the project (`skyfin-ai`, team `skylee310s-projects`, production URL `https://skyfin-ai.vercel.app`) through the Vercel dashboard, since the Vercel MCP's `create_git_project` kept failing. The Vercel MCP's single-project calls (`get_project`, `update_project`, `create_project_env`) still 404 on this project even though `list_projects` sees it intermittently — looks like a bug/lag between Vercel's list and single-resource endpoints. Worked around by having Sky set Function Region (`sin1`) and the two `NEXT_PUBLIC_SUPABASE_*` env vars (Production + Preview) directly in the dashboard, and set the Supabase Auth Site URL to `https://skyfin-ai.vercel.app` with `http://localhost:3000/auth/callback` and `https://skyfin-ai.vercel.app/auth/callback` in the redirect URLs.
-  - **Still open:** `main` has no app code yet (it's all on branch `m1`), so there's no real production deploy to verify yet — that happens at the Phase C spike push-to-main gate. Leave this box unchecked until that push succeeds and the Home Screen OAuth round-trip passes.
+  - **Spike result (2026-09-22):** Sky approved the push; `main` now matches `m1`. Google sign-in confirmed working in production from both Safari and the iOS Home Screen icon, clearing the core R1 risk. 3 of the spike's 4 pass criteria are confirmed on Sky's real iPhone: (1) sign in from the Home Screen icon, land back in the app signed in; (2) force-quit and reopen, still signed in; (4) delete/re-add the Home Screen icon, fresh sign-in from a clean storage container. (3) reopening after over an hour to confirm silent token refresh is still open — it needs real elapsed time.
 
 **DB**
 - [x] M1.4 Migration `0001_init.sql` (all tables, RLS, functions, new-user trigger) — full file from TECH_SPEC §4.2.
-- [x] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud (2026-09-22, done by Sky). Turning off new sign-ups (D26) still waits on Sky's first production sign-in — do that during the iPhone spike.
+- [x] M1.5 Enable Google provider in Supabase Auth; register OAuth client in Google Cloud (2026-09-22, done by Sky). The provider wasn't actually saved on the first pass — production returned `Unsupported provider: provider is not enabled` because no real Google Cloud OAuth client had been created yet. Fixed 2026-09-22: Sky created a Web application OAuth client in Google Cloud Console and entered its Client ID + Secret into Supabase's Google provider config. D26 (turn off new sign-ups) is now actionable — Sky's first production sign-in happened 2026-09-22.
 
 **Server**
 - [x] M1.6 `lib/supabase/{server,browser,proxy}.ts` + `src/proxy.ts` session refresh (Next 16 renamed `middleware.ts` to `proxy.ts`).
 - [x] M1.7 `actions/auth.ts` `signInWithGoogle`; `app/auth/callback/route.ts`.
-- [ ] M1.8 `actions/profile.ts` `updateBudget` (sen in, Zod, `getUser()` check).
+- [x] M1.8 `actions/profile.ts` `updateBudget` (sen in, Zod, `getUser()` check).
 - [x] M1.9 `lib/money.ts` (sen ⇄ RM, `formatRM`) and `lib/dates.ts` (`todayMYT`, `monthRangeMYT`).
 
 **UI**
 - [x] M1.10 `app/manifest.ts`, icons, `apple-touch-icon`, standalone display, theme colour, safe-area CSS.
 - [x] M1.11 `login/page.tsx` with Google button.
-- [ ] M1.12 `(app)/layout.tsx` with bottom nav (4 tabs; Chat/History/Audit show "Coming soon").
-- [ ] M1.13 Onboarding step 1: set monthly budget (sheet shown when budget = 0).
-- [ ] M1.14 Dashboard budget card: remaining, budget, days left (no projection yet).
+- [x] M1.12 `(app)/layout.tsx` with bottom nav (4 tabs) and the onboarding gate. The "Coming soon" placeholder pages were never merged: M2's real Chat, History and AI Audit pages fill those tabs.
+- [x] M1.13 Onboarding step 1: set monthly budget (sheet shown when budget = 0).
+- [x] M1.14 Dashboard budget card: remaining, budget, days left (no projection yet).
 
 **Test**
 - [x] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from every table; exact grants asserted (D25).
 - [x] M1.16 Unit tests for `money.ts` and `dates.ts` (23:59 / 00:01 MYT, month ends, February).
-- [ ] M1.17 E2E `tests/e2e/onboarding.spec.ts` (F2): a new user sees "Set your monthly budget" and the sheet; set RM 800 → "RM 800.00 left of RM 800.00"; with an expense dated this month, edit to RM 850.50 → the card updates at once and still deducts that expense; RM 0 is accepted; negative amounts and 3 decimals are rejected.
+- [x] M1.17 E2E `tests/e2e/onboarding.spec.ts` (F2): a new user sees "Set your monthly budget" and the sheet; set RM 800 → the card shows "RM 800.00" left and "Spent RM 0.00 of RM 800.00"; with an expense dated this month, edit to RM 850.50 → the card updates at once and still deducts that expense; RM 0 is accepted; negative amounts and 3 decimals are rejected; reopening the sheet from the card shows the saved budget; dismissing the onboarding sheet leaves a zero-budget card that reopens it (F2-2). All 19 e2e tests pass locally (auth 6, m2-manual-logging 4, pwa 2, onboarding 7) against a local Supabase stack (2026-09-24).
 - [ ] M1.18 `scripts/check-client-bundle.mjs` as the `postbuild` script (F1 criterion 4): `npm run build` fails, locally and on Vercel, if `.next/static` contains any TECH_SPEC §8 pattern.
 
 **Done when:** demo passes on a real iPhone; F1 criteria 1, 2 (tables; Storage paths in M4.12) and 4 pass; all F2 criteria pass. F1 criterion 3 is tested in M2.1.

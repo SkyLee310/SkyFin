@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { createServerClient } from "@supabase/ssr";
 
+type SupabaseSession = ReturnType<typeof createCookieJarClient>["supabase"];
+
 // A Supabase client that keeps its cookies in memory, so a test can hand them to the browser with
 // context.addCookies(). Uses only the local publishable key from playwright.config.ts.
 function createCookieJarClient(baseURL: string) {
@@ -23,15 +25,47 @@ function createCookieJarClient(baseURL: string) {
 const newEmail = () => `e2e-${randomUUID()}@skyfin.test`;
 
 // Signs up a fresh user on the local stack, where email confirmation is off, and returns the
-// session cookies. A new user each time starts with a zero budget.
+// session cookies. A new user each time starts with a zero budget. `supabase` is the same
+// authenticated client, for tests that need to arrange rows (e.g. insertExpense, setBudget)
+// through RLS exactly as the signed-in user would, rather than bypassing it.
 export async function createSignedInUser(baseURL: string) {
   const { supabase, cookies } = createCookieJarClient(baseURL);
   const email = newEmail();
-  const { error } = await supabase.auth.signUp({ email, password: randomUUID() });
+  const { data, error } = await supabase.auth.signUp({ email, password: randomUUID() });
   if (error) throw error;
   if (cookies().length === 0) throw new Error("Sign-up returned no session. Is email confirmation on locally?");
 
-  return { email, cookies: cookies() };
+  return { email, userId: data.user!.id, supabase, cookies: cookies() };
+}
+
+// Inserts an expense dated today (so it always lands in "this month") against one of the
+// user's seeded categories. Amount is sen, converted the same way src/lib/money.ts would.
+export async function insertExpense(supabase: SupabaseSession, userId: string, amountSen: number) {
+  const { data: category, error: categoryError } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("kind", "expense")
+    .limit(1)
+    .single();
+  if (categoryError) throw categoryError;
+
+  const { error } = await supabase.from("transactions").insert({
+    user_id: userId,
+    category_id: category.id,
+    amount: (amountSen / 100).toFixed(2),
+    type: "expense",
+    payment_method: "Cash",
+  });
+  if (error) throw error;
+}
+
+// Sets a user's budget directly, for tests that need one already in place before the page loads.
+export async function setBudget(supabase: SupabaseSession, userId: string, budgetSen: number) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ monthly_budget: (budgetSen / 100).toFixed(2) })
+    .eq("id", userId);
+  if (error) throw error;
 }
 
 // Starts a PKCE sign-in the way the app does, but by email, since Google can't run in a test.

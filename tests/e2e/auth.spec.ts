@@ -44,7 +44,8 @@ test("the callback exchanges the code and lands the user signed in", async ({
 
   // The session cookies must ride on the callback's redirect, or / sends the user to /login.
   await expect(page).toHaveURL("/");
-  await expect(page.getByText(`Signed in as ${signIn.email}`)).toBeVisible();
+  // A fresh, signed-in user lands on the real Dashboard, which auto-opens onboarding.
+  await expect(page.getByRole("heading", { name: "Set your monthly budget" })).toBeVisible();
 });
 
 test("a callback without a code shows a sign-in error", async ({ page }) => {
@@ -69,5 +70,6 @@ test("a signed-in user skips the login page", async ({ page, context, baseURL })
   await page.goto("/login");
 
   await expect(page).toHaveURL("/");
-  await expect(page.getByText(`Signed in as ${user.email}`)).toBeVisible();
+  // A fresh, signed-in user lands on the real Dashboard, which auto-opens onboarding.
+  await expect(page.getByRole("heading", { name: "Set your monthly budget" })).toBeVisible();
 });
