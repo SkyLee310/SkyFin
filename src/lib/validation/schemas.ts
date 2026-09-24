@@ -58,6 +58,13 @@ export const ArchiveCategorySchema = z.object({
 });
 export type ArchiveCategoryInput = z.infer<typeof ArchiveCategorySchema>;
 
+// Upper bound is RM 999,999.99 — a ceiling for a personal monthly budget, tighter than the
+// numeric(10,2) column's own RM 99,999,999.99 capacity.
+export const UpdateBudgetInput = z.object({
+  budgetSen: z.number().int().min(0).max(99_999_999),
+});
+export type UpdateBudgetInput = z.infer<typeof UpdateBudgetInput>;
+
 export type ActionErrorCode =
   | "UNAUTHENTICATED"
   | "VALIDATION"

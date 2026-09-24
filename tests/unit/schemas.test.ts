@@ -6,6 +6,7 @@ import {
   CreateCategorySchema,
   RenameCategorySchema,
   ArchiveCategorySchema,
+  UpdateBudgetInput,
 } from "@/lib/validation/schemas";
 
 describe("PaymentMethod", () => {
@@ -195,5 +196,24 @@ describe("Category Schemas", () => {
         id: "123e4567-e89b-12d3-a456-426614174000",
       }).id
     ).toBe("123e4567-e89b-12d3-a456-426614174000");
+  });
+});
+
+describe("UpdateBudgetInput", () => {
+  it.each([0, 1, 80000, 99_999_999])("accepts budgetSen %i", (budgetSen) => {
+    expect(UpdateBudgetInput.safeParse({ budgetSen }).success).toBe(true);
+  });
+
+  it.each([
+    -1, // below minimum
+    100_000_000, // above the RM 999,999.99 ceiling
+    1.5, // not an integer (sub-sen amount)
+    NaN,
+  ])("rejects budgetSen %s", (budgetSen) => {
+    expect(UpdateBudgetInput.safeParse({ budgetSen }).success).toBe(false);
+  });
+
+  it("rejects a missing budgetSen", () => {
+    expect(UpdateBudgetInput.safeParse({}).success).toBe(false);
   });
 });
