@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Sparkles, MessageSquare } from "lucide-react";
-import { ConfirmationCard } from "@/components/confirmation-card/confirmation-card";
+import { Plus, Sparkles, MessageSquare, Loader2 } from "lucide-react";
+import { ConfirmationCard, type ReceiptAttachment } from "@/components/confirmation-card/confirmation-card";
 import { Composer } from "@/components/chat/composer";
 import { DraftStack } from "@/components/chat/draft-stack";
 import { type ChatMessage, MessageList } from "@/components/chat/message-list";
+import { ReceiptButtons, type ReceiptOutcome, type ReceiptStage } from "@/components/chat/receipt-button";
 import { Category, listCategories } from "@/actions/categories";
 import { parseTextEntry } from "@/actions/ai";
 import { saveTransactions } from "@/actions/transactions";
@@ -25,6 +26,8 @@ export default function ChatPage() {
   const [isCardOpen, setIsCardOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [receiptStage, setReceiptStage] = useState<ReceiptStage | null>(null);
+  const [receipt, setReceipt] = useState<(ReceiptAttachment & { draft?: Draft }) | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -93,8 +96,36 @@ export default function ChatPage() {
 
   const openManual = () => {
     setEditingClientId(null);
+    setReceipt(null);
     setIsCardOpen(true);
   };
+
+  const handleReceipt = (outcome: ReceiptOutcome) => {
+    if (outcome.kind === "error") {
+      addMessage({ role: "assistant", text: outcome.message, isError: true });
+      return;
+    }
+    if (outcome.kind === "manual") {
+      addMessage({ role: "assistant", text: `${outcome.message} Fill in the card by hand; the photo is attached.`, isError: true });
+    }
+    setEditingClientId(null);
+    setReceipt({
+      path: outcome.path,
+      previewUrl: outcome.previewUrl,
+      draft: outcome.kind === "draft" ? outcome.draft : undefined,
+    });
+    setIsCardOpen(true);
+  };
+
+  const receiptBusy = receiptStage !== null;
+  const stageText =
+    receiptStage?.stage === "preparing"
+      ? "Preparing photo…"
+      : receiptStage?.stage === "uploading"
+        ? `Uploading receipt… ${receiptStage.percent}%`
+        : receiptStage?.stage === "reading"
+          ? "Reading receipt…"
+          : null;
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-5rem)] px-4 pt-safe">
@@ -152,6 +183,26 @@ export default function ChatPage() {
 
         <MessageList messages={messages} pending={pending} onRetry={retry} />
 
+        {stageText && (
+          <div
+            id="receipt-progress"
+            role="status"
+            className="self-start flex flex-col gap-2 min-w-[60%] px-4 py-3 bg-slate-100 text-slate-700 text-sm rounded-2xl rounded-bl-md"
+          >
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> {stageText}
+            </span>
+            {receiptStage?.stage === "uploading" && (
+              <span className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <span
+                  className="block h-full bg-emerald-500 transition-all"
+                  style={{ width: `${receiptStage.percent}%` }}
+                />
+              </span>
+            )}
+          </div>
+        )}
+
         <DraftStack
           drafts={drafts}
           categories={categories}
@@ -175,17 +226,26 @@ export default function ChatPage() {
 
       {/* Composer, pinned above the bottom nav */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-100">
-        <Composer disabled={pending} onSend={(text) => void send(text)} />
+        <Composer
+          disabled={pending}
+          onSend={(text) => void send(text)}
+          leading={<ReceiptButtons disabled={receiptBusy} onStage={setReceiptStage} onOutcome={handleReceipt} />}
+        />
       </div>
 
       <ConfirmationCard
         open={isCardOpen}
         onOpenChange={(open) => {
           setIsCardOpen(open);
-          if (!open) setEditingClientId(null);
+          if (!open) {
+            setEditingClientId(null);
+            if (receipt?.previewUrl) URL.revokeObjectURL(receipt.previewUrl);
+            setReceipt(null);
+          }
         }}
         categories={categories}
-        initialDraft={editingDraft}
+        initialDraft={receipt ? receipt.draft : editingDraft}
+        receipt={receipt ?? undefined}
         onSuccess={() => {
           if (editingDraft) removeDrafts([editingDraft.clientId]);
           notify("Transaction recorded successfully!");

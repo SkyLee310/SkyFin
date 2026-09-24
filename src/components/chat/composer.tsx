@@ -22,7 +22,7 @@ export function Composer({ disabled, onSend, leading }: ComposerProps) {
   };
 
   return (
-    <form onSubmit={submit} className="flex items-end gap-2">
+    <form onSubmit={submit} className="flex items-end gap-2 min-w-0">
       {leading}
       <input
         id="chat-input"
@@ -33,7 +33,7 @@ export function Composer({ disabled, onSend, leading }: ComposerProps) {
         value={text}
         maxLength={500}
         onChange={(e) => setText(e.target.value)}
-        className="flex-1 min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className="flex-1 min-w-0 min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
       />
       <button
         type="submit"
