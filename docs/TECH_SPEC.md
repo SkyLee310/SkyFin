@@ -336,15 +336,15 @@ grant execute on function public.receipts_to_purge() to service_role;
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('receipts', 'receipts', false, 2097152, array['image/jpeg']);
 
-create policy "own receipts read"   on storage.objects for select
+create policy "own receipts read"   on storage.objects for select to authenticated
   using (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);
-create policy "own receipts insert" on storage.objects for insert
+create policy "own receipts insert" on storage.objects for insert to authenticated
   with check (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);
-create policy "own receipts delete" on storage.objects for delete
+create policy "own receipts delete" on storage.objects for delete to authenticated
   using (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);
 ```
 
-Object path: `{user_id}/{uuid}.jpg`. `transactions.receipt_url` stores this path; the UI renders it through a 1-hour signed URL. Objects are always deleted through the Storage API, never with SQL `delete from storage.objects`, which would leave the file behind.
+Object path: `{user_id}/{uuid}.jpg`. There is no update policy, so an upload never overwrites an object. Storage rejects SQL deletes on `storage.objects`, so pgTAP pins the delete policy and E2E exercises it through the API. `transactions.receipt_url` stores this path; the UI renders it through a 1-hour signed URL. Objects are always deleted through the Storage API, never with SQL `delete from storage.objects`, which would leave the file behind.
 
 ### 4.4 Derived data (views / queries, not tables)
 
@@ -492,7 +492,9 @@ skyfin/
 │   ├── migrations/
 │   │   ├── 0001_init.sql
 │   │   └── 0002_storage.sql
-│   └── tests/rls.test.sql          # pgTAP: cross-user isolation and exact Data API privileges
+│   └── tests/
+│       ├── rls.test.sql            # pgTAP: cross-user isolation and exact Data API privileges
+│       └── storage.test.sql        # pgTAP: receipts bucket settings and per-user folder policies
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx              # html, theme, safe-area
