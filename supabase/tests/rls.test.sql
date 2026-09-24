@@ -2,7 +2,7 @@
 -- Run with `npx supabase test db` against the local stack. Everything rolls back at the end.
 -- User A is aaaaaaaa-…, user B is bbbbbbbb-…; B plays the attacker.
 begin;
-select plan(49);
+select plan(51);
 
 -- ============ FIXTURES (as postgres, which owns the tables and so bypasses RLS) ============
 insert into auth.users (id, email) values
@@ -72,6 +72,11 @@ from (values
   ('handle_new_user',       '{}',                'service_role',  '{}')
 ) as f(fn, args, r, privs);
 
+-- For the composite FK test below, while RLS doesn't apply yet.
+select set_config('test.a_category_id',
+  (select id::text from public.categories
+   where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and kind = 'expense' limit 1), true);
+
 -- ============ USER B (authenticated) ============
 select set_config('request.jwt.claims',
   '{"sub": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "role": "authenticated"}', true);
@@ -134,13 +139,15 @@ select throws_ok(
   '42501', 'new row violates row-level security policy for table "ai_usage"',
   'B cannot add AI usage for A');
 
--- M2.1: Composite FK prevents B from referencing A's category, even when user_id = B passes RLS
+-- M2.1: Composite FK prevents B from referencing A's category, even when user_id = B passes RLS.
+-- A's category id was captured before switching to B: as B, RLS hides it, and a lookup here
+-- would insert null and fail on not-null instead of the FK.
 select throws_ok(
   $$ insert into public.transactions (user_id, amount, category_id, type, payment_method)
      values (
        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
        10.00,
-       (select id from public.categories where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' limit 1),
+       current_setting('test.a_category_id')::uuid,
        'expense',
        'Cash'
      ) $$,
@@ -150,6 +157,10 @@ select throws_ok(
 
 -- consume_ai_call is security invoker, so this needs the grants and B's own RLS to line up.
 select is(public.consume_ai_call(), true, 'B can call consume_ai_call');
+-- M3.10: the cap is 100 calls per MYT day; that was call 1.
+select is((select bool_and(public.consume_ai_call()) from generate_series(2, 100)), true,
+  'calls 2 to 100 of the day are allowed');
+select is(public.consume_ai_call(), false, 'call 101 of the day is refused');
 
 -- ============ ANON ============
 select set_config('request.jwt.claims', '{"role": "anon"}', true);
