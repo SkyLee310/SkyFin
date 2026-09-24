@@ -35,6 +35,7 @@ npm run build           # production build
 npx supabase start      # local Supabase stack (needs Docker)
 npx supabase test db    # SQL tests in supabase/tests: RLS isolation, composite FK, dedup keys
 npm run test:ai-eval    # paid Gemini calls: run only when changing a model or prompt, or when asked
+npm run check:gemini    # one paid call: confirms GEMINI_MODEL answers on Vertex AI (reads .env.local)
 ```
 
 A task is done when `lint`, `typecheck` and `npm test` pass (plus `test:e2e` when it changes a UI flow) and its box in `docs/TASKS.md` is ticked. A milestone is done only when Sky confirms its demo passed on a real iPhone; start the next milestone after that.

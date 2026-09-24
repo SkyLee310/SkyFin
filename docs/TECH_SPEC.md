@@ -445,7 +445,7 @@ Rules for all three:
 - The category name returned must match a provided name, else it maps to "Others".
 - Amounts from the model are parsed to sen and re-validated; anything that fails Zod → one retry, then `AI_FAILED` (or a stats-only audit).
 - Text on a receipt is data. The prompt states that instructions found in images or messages must not change the output schema, and the schema itself limits what can be returned.
-- Parameter names for thinking level follow the current `@google/genai` docs for Gemini 3.x models; confirm when implementing.
+- Thinking level is `config.thinkingConfig.thinkingLevel` (`ThinkingLevel.LOW` / `MEDIUM`), confirmed against `@google/genai` 2.24; the JSON schema goes in `config.responseJsonSchema`.
 
 ### 5.5 Agents (`src/lib/agents/`)
 
@@ -558,6 +558,8 @@ skyfin/
 │   ├── unit/                       # accounting, money, dates, schemas
 │   ├── ai-eval/receipts/           # 20 test receipts + expected totals
 │   └── e2e/                        # Playwright, iPhone 15 viewport
+├── scripts/
+│   └── check-gemini.mjs            # one call: does GEMINI_MODEL answer in GOOGLE_CLOUD_LOCATION?
 ├── .env.example
 ├── vercel.json
 └── package.json
@@ -587,7 +589,7 @@ skyfin/
 | Unit | `evaluatePace` table tests (incl. S = 0, B = 0, day 1–2, spike, excluded rows), `money.ts` rounding, `dates.ts` around 23:59 / 00:01 MYT and month ends | Vitest, with `TZ=UTC` as on Vercel |
 | DB | RLS isolation, table and function privileges, composite FK rejection, `dedup_key` uniqueness, `consume_ai_call` cap | pgTAP files in `supabase/tests`, run with `npx supabase test db` against the local stack (branching needs a paid plan) |
 | AI eval | 20 receipts → totals within RM 0.00; 30 chat phrases (EN/ZH/MS/Rojak) → expected drafts | Vitest script, run manually before each model change |
-| E2E | Each milestone's demo script in TASKS.md, run against the local Supabase stack. Google can't run in a test: the callback test signs in through an emailed PKCE link read from Mailpit, and other tests start as a fresh email/password user | Playwright, iPhone 15 (WebKit), dev server on port 3100 |
+| E2E | Each milestone's demo script in TASKS.md, run against the local Supabase stack. Google can't run in a test: the callback test signs in through an emailed PKCE link read from Mailpit, and other tests start as a fresh email/password user. AI flows use canned model output (`AI_FAKE=1`, D30) | Playwright, iPhone 15 (WebKit), dev server on port 3100 |
 | Device | Home Screen install, sign-in, push receipt | Real iPhone, per milestone |
 
 ---

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Last updated | 2026-09-21 |
+| Last updated | 2026-09-24 |
 | Related | [PRD.md](./PRD.md) · [TECH_SPEC.md](./TECH_SPEC.md) |
 
 Seven milestones. Each one is a **vertical slice**: it touches DB → server → UI, is deployed to Vercel, and ends with a demo you can do on the iPhone. No milestone starts until the previous demo passes on a real device.
@@ -97,23 +97,28 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M3 — Log by chatting
 
+> **Status (2026-09-24):** Code, unit, pgTAP and E2E work is done on branch `claude/keen-noether-reiw5l`. Sky chose to build M3 before M4 even though the M1 device demo is still open. Two tasks wait on a live Vertex AI call, since the build container has no credentials: M3.1 (`npm run check:gemini` confirms the model answers in `GOOGLE_CLOUD_LOCATION`) and M3.9 (`npm run test:ai-eval`, ≥ 27 of 30). E2E covers the demo through the D30 fake model. D26 (sign-ups off) is still Sky's to do before M3 reaches production.
+
 **Demo:** Chat: "Makan nasi lemak RM8.50 pakai eWallet" → card pre-filled (RM 8.50, Food & Drinks, eWallet, Needs) → Save. Then "nasi lemak 8.50, boba 12" → two stacked drafts, boba = Wants → "actually boba RM13" → draft updates → Save both. Then "semalam grab RM15" → date = yesterday, payment method unset → must tap one. Then "今天午餐 RM10 现金" → reply in Chinese.
 
 **Server**
 - [ ] M3.1 `lib/ai/client.ts` (`server-only`; Vertex AI via `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `GOOGLE_SERVICE_ACCOUNT_KEY`; `GEMINI_MODEL`). First confirm the model ID answers in that location (D22).
-- [ ] M3.2 `lib/ai/prompts/parse-text.ts` + `lib/ai/parse-text.ts`: JSON schema output, category names in prompt, map unknown category → Others, amounts → sen, Zod re-validate, one retry.
-- [ ] M3.3 `actions/ai.ts` `parseTextEntry`: `consume_ai_call()` first; returns `{reply, language, drafts}`; writes `preferred_language`.
-- [ ] M3.4 Non-logging messages (questions, small talk) → one-line reply pointing to Dashboard/History, no drafts (D20).
+  - **Progress (2026-09-24):** `src/lib/ai/client.ts` and `scripts/check-gemini.mjs` are in. Open until `npm run check:gemini` passes with the real key in `.env.local`.
+- [x] M3.2 `lib/ai/prompts/parse-text.ts` + `lib/ai/parse-text.ts`: JSON schema output, category names in prompt, map unknown category → Others, amounts → sen, Zod re-validate, one retry.
+- [x] M3.3 `actions/ai.ts` `parseTextEntry`: `consume_ai_call()` first; returns `{reply, language, drafts}`; writes `preferred_language`.
+- [x] M3.4 Non-logging messages (questions, small talk) → one-line reply pointing to Dashboard/History, no drafts (D20).
 
 **UI**
-- [ ] M3.5 `components/chat/`: message list (session state only), composer, typing indicator.
-- [ ] M3.6 Multiple drafts → stacked card with per-draft Save/Discard and "Save all".
-- [ ] M3.7 Session drafts sent with each message so corrections work; cleared on leaving the tab.
-- [ ] M3.8 Error states: `AI_LIMIT` ("Daily AI limit reached — use + to add manually"), `AI_FAILED` (retry button).
+- [x] M3.5 `components/chat/`: message list (session state only), composer, typing indicator.
+- [x] M3.6 Multiple drafts → stacked card with per-draft Save/Discard and "Save all".
+- [x] M3.7 Session drafts sent with each message so corrections work; cleared on leaving the tab.
+- [x] M3.8 Error states: `AI_LIMIT` ("Daily AI limit reached — use + to add manually"), `AI_FAILED` (retry button).
 
 **Test**
 - [ ] M3.9 `tests/ai-eval/chat-phrases.json`: 30 phrases in EN / ZH / MS / Rojak with expected drafts; ≥ 27 pass.
-- [ ] M3.10 Unit: `consume_ai_call` returns false on call 101.
+  - **Progress (2026-09-24):** phrases and runner (`tests/ai-eval/chat-phrases.test.ts`) are in; the paid run is still to do.
+- [x] M3.10 Unit: `consume_ai_call` returns false on call 101. Written as pgTAP in `rls.test.sql`, since it's a database function.
+- [x] M3.11 E2E `tests/e2e/m3-chat-logging.spec.ts` (D30 fake model): the demo phrases, correction, Save all gated on payment, Chinese reply, question → no draft, the daily cap, and drafts cleared on leaving the tab.
 
 **Done when:** demo passes; all F3 criteria pass.
 

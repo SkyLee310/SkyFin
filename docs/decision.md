@@ -32,6 +32,7 @@ This document records architectural, operational, and organizational decisions f
 | D26 | Sign-up lock | After Sky's first production sign-in, turn off new sign-ups in Supabase Auth; the Email provider stays off unless D14 is used. Must be done before M3. See the record below. | 2026-09-21 | Approved |
 | D27 | Test database | pgTAP and E2E run on the local Supabase Docker stack, never the cloud project (Branching needs a paid plan). E2E signs up fresh email/password users, and runs a PKCE email-link sign-in through Mailpit to exercise `/auth/callback`, since Google sign-in can't run in a test. | 2026-09-21 | Approved |
 | D28 | Function region | Vercel functions run in `sin1` (Singapore), next to the Supabase project; the Hobby default `iad1` would add a US–Singapore round trip to every query. | 2026-09-21 | Approved |
+| D30 | Fake AI in E2E | `AI_FAKE=1` (set only by Playwright's web server) makes the parsers use canned model output instead of Gemini; `NODE_ENV=production` always turns it off. See the record below. | 2026-09-24 | Approved |
 
 ---
 
@@ -84,4 +85,14 @@ This document records architectural, operational, and organizational decisions f
   - `src/app/(app)/history/page.tsx` is an async Server Component that reads URL `searchParams` and runs `getTransactionsHistory()` and `listCategories()`.
   - Client interactivity (filter dropdowns, bottom sheet drawer, delete confirmation dialog) is encapsulated in `src/app/(app)/history/history-view.tsx` (`"use client"`), which only imports types from queries and executes mutations via Server Actions (`deleteTransaction`, `revalidatePath`).
   - Add `import "server-only"` to `src/lib/queries/history.ts` and `src/lib/queries/dashboard.ts` to prevent accidental bundling into client bundles at build time.
+
+### D30: Fake AI output in E2E tests
+
+- **Context:** The M3 and M4 demos are AI flows, but E2E runs on the local stack with no Vertex AI credentials, and real calls would cost money and vary run to run.
+- **Decision:**
+  - `isFakeAiEnabled()` in `src/lib/ai/generate.ts` is true only when `AI_FAKE=1` and `NODE_ENV !== "production"`. Only the Playwright web server sets `AI_FAKE`; Vercel builds always run with `NODE_ENV=production`.
+  - When on, `parseText` (and, from M4, `parseReceipt`) take the model's JSON from `src/lib/ai/fake.ts` instead of Gemini. The fake returns what Gemini would, so the Zod checks, category mapping, sen conversion, `consume_ai_call` cap and save paths all run for real.
+  - Model accuracy is measured separately by the paid `npm run test:ai-eval` suites (M3.9, M4.11).
+- **Alternative not taken:** intercepting Server Action requests in Playwright. The RSC wire format is internal to Next.js and would break on upgrades.
+- **Risk:** the fake drifts from the real model's output shape. Mitigation: the fake goes through the same `ModelTextOutput` schema, so a shape change fails E2E.
 
