@@ -72,6 +72,12 @@ export const ParseTextInput = z.object({
 });
 export type ParseTextInput = z.infer<typeof ParseTextInput>;
 
+// A receipt object path; actions also check it is {uid}/{uuid}.jpg in the caller's own folder.
+export const ReceiptPathInput = z.object({
+  path: z.string().max(100),
+});
+export type ReceiptPathInput = z.infer<typeof ReceiptPathInput>;
+
 export type ActionErrorCode =
   | "UNAUTHENTICATED"
   | "VALIDATION"
