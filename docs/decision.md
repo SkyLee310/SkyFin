@@ -44,6 +44,7 @@ This document records architectural, operational, and organizational decisions f
   - **M1 Owner: Claude**. Operating in the main repository on branch `m1`. Owns `M1.1`–`M1.18` (Next.js app initialization, Supabase auth integration, initial budget onboarding, and M1 device demo).
   - **M2 Owner: Antigravity**. Operating in isolated Git worktree `.worktrees/m2` on branch `m2`. Owns `M2.1`–`M2.12` (Confirmation Card bottom sheet, category management, History page with day groups & filters, Dashboard Net Cash Flow card, schemas, server actions, and unit/e2e tests).
   - **Integration Strategy:** Antigravity maintains clean worktree isolation. Once Claude finishes M1 and confirms the real device demo, branch `m1` will be merged into `m2` (or vice-versa), running combined test suites (`npm test`, `npm run typecheck`, `npm run test:e2e`).
+  - **Outcome (2026-09-24):** Sky merged `m2` into `main` first (PR #1, PR #2), so the M1 budget slice (`M1.8`, `M1.12`–`M1.14`, `M1.17`) was reconciled onto `main` file by file via branch `m1-budget` instead of a branch merge; `m1` is retired.
 
 ### D22: Gemini through Vertex AI
 
