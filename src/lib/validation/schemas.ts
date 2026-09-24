@@ -65,6 +65,13 @@ export const UpdateBudgetInput = z.object({
 });
 export type UpdateBudgetInput = z.infer<typeof UpdateBudgetInput>;
 
+// One chat message plus the session's unsaved drafts, so "actually RM9" can correct them (FR-8).
+export const ParseTextInput = z.object({
+  message: z.string().trim().min(1).max(500),
+  sessionDrafts: z.array(Draft).max(20),
+});
+export type ParseTextInput = z.infer<typeof ParseTextInput>;
+
 export type ActionErrorCode =
   | "UNAUTHENTICATED"
   | "VALIDATION"
