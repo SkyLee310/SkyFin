@@ -79,3 +79,42 @@ export function fakeParseText(input: ParseTextPromptInput): string {
   }
   return JSON.stringify(out);
 }
+
+/** Width and height from a baseline or progressive JPEG's SOF marker, or null. */
+export function jpegSize(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  let i = 2;
+  while (i + 9 < bytes.length) {
+    if (bytes[i] !== 0xff) return null;
+    const marker = bytes[i + 1]!;
+    const length = (bytes[i + 2]! << 8) | bytes[i + 3]!;
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      return { height: (bytes[i + 5]! << 8) | bytes[i + 6]!, width: (bytes[i + 7]! << 8) | bytes[i + 8]! };
+    }
+    i += 2 + length;
+  }
+  return null;
+}
+
+// The E2E photos are plain canvases, so the fake reads their shape: portrait is the demo's
+// 99 Speedmart receipt, square is a faded foreign receipt, landscape is "a cat".
+export function fakeParseReceipt(image: Uint8Array): string {
+  const size = jpegSize(image);
+  const notReceipt = {
+    is_receipt: false, total_amount: null, currency_is_rm: false, merchant: null, date: null,
+    suggested_category: null, suggested_is_essential: false, suggested_payment_method: null,
+    item_label: null, confidence: 0,
+  };
+  if (!size || size.width > size.height) return JSON.stringify(notReceipt);
+  if (size.width === size.height) {
+    return JSON.stringify({
+      ...notReceipt, is_receipt: true, total_amount: 12, currency_is_rm: false, merchant: "Cold Storage SG",
+      suggested_category: "Groceries", suggested_is_essential: true, item_label: "groceries", confidence: 0.55,
+    });
+  }
+  return JSON.stringify({
+    is_receipt: true, total_amount: 42.3, currency_is_rm: true, merchant: "99 Speedmart", date: null,
+    suggested_category: "Groceries", suggested_is_essential: true, suggested_payment_method: "Cash",
+    item_label: "groceries", confidence: 0.93,
+  });
+}
