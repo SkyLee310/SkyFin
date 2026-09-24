@@ -126,27 +126,30 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M4 — Log by snapping a receipt
 
+> **Status (2026-09-24):** Built on branch `claude/keen-noether-reiw5l` after M3. Unit, pgTAP (`storage.test.sql`) and E2E (`m4-receipts.spec.ts`, D30 fake model with real uploads) all pass on the local stack. Still open: M4.11 needs Sky's 20 receipt photos and Vertex AI credentials. Before this reaches production: Sky's OK to `supabase db push` migration `0002_storage.sql`, the Vertex AI env vars in Vercel (M3.1), and D26. Receipts upload through a server-issued signed URL instead of the browser Supabase client (D31, proposed, awaiting Sky's OK).
+
 **Demo:** Chat → camera → photo of a 99 Speedmart receipt (RM 42.30) → card pre-filled with total, merchant, date → Split → RM 30.00 Groceries (Needs) + RM 12.30 Food & Drinks (Wants) → Save disabled until remainder = RM 0.00 → Save → History shows one expandable group with the photo. Then photo of a cat → "This doesn't look like a receipt". Then snap a receipt and Discard → object gone from Storage.
 
 **DB**
-- [ ] M4.1 Migration `0002_storage.sql` (private bucket, JPEG only, 2 MB, per-user folder policies).
+- [x] M4.1 Migration `0002_storage.sql` (private bucket, JPEG only, 2 MB, per-user folder policies).
 
 **Server**
-- [ ] M4.2 `lib/ai/prompts/parse-receipt.ts` + `lib/ai/parse-receipt.ts`: download bytes via session client, send as `inlineData`, schema output incl. `confidence`, `currency_is_rm`, `item_label`.
-- [ ] M4.3 `actions/ai.ts` `parseReceipt` (delete object on `NOT_RECEIPT`) and `discardReceipt`.
-- [ ] M4.4 `saveTransactions`: set shared `receipt_url` and `receipt_group_id` for split rows.
-- [ ] M4.5 `deleteTransaction`: remove image via Storage API when no other row references it.
+- [x] M4.2 `lib/ai/prompts/parse-receipt.ts` + `lib/ai/parse-receipt.ts`: download bytes via session client, send as `inlineData`, schema output incl. `confidence`, `currency_is_rm`, `item_label`.
+- [x] M4.3 `actions/ai.ts` `parseReceipt` (delete object on `NOT_RECEIPT`) and `discardReceipt`. Also `createReceiptUpload`, which returns a signed upload URL for a server-chosen path (D31).
+- [x] M4.4 `saveTransactions`: set shared `receipt_url` and `receipt_group_id` for split rows.
+- [x] M4.5 `deleteTransaction`: remove image via Storage API when no other row references it.
 
 **UI**
-- [ ] M4.6 `lib/image.ts`: `createImageBitmap` → canvas → JPEG, max 1600 px, target < 1 MB.
-- [ ] M4.7 Receipt button: camera + gallery (`<input type="file" accept="image/*" capture="environment">` and a gallery variant), upload progress.
-- [ ] M4.8 Card: receipt thumbnail (signed URL), amber highlight when `confidence < 0.7`, "Currency may not be RM" flag.
-- [ ] M4.9 `split-editor.tsx`: add/remove rows, remainder in sen, Save gated on 0.
-- [ ] M4.10 History: receipt groups collapsed by default; tap to expand; thumbnail.
+- [x] M4.6 `lib/image.ts`: `createImageBitmap` → canvas → JPEG, max 1600 px, target < 1 MB.
+- [x] M4.7 Receipt button: camera + gallery (`<input type="file" accept="image/*" capture="environment">` and a gallery variant), upload progress.
+- [x] M4.8 Card: receipt thumbnail (signed URL), amber highlight when `confidence < 0.7`, "Currency may not be RM" flag. The card shows the local copy of a fresh upload, so it doesn't wait for a signed URL. A possible non-RM total needs an "I've checked the amount is in RM" tick before Save (FR-14). Discard, X and swipe-down all delete the upload (F5-3). At the AI cap, or when the read fails, the photo is kept and the card opens empty.
+- [x] M4.9 `split-editor.tsx`: add/remove rows, remainder in sen, Save gated on 0.
+- [x] M4.10 History: receipt groups collapsed by default; tap to expand; thumbnail.
 
 **Test**
 - [ ] M4.11 Collect 20 real receipts into `tests/ai-eval/receipts/` with expected totals; ≥ 18 exact.
-- [ ] M4.12 E2E: split save; discard deletes object; RLS blocks reading another user's object.
+  - **Progress (2026-09-24):** runner (`tests/ai-eval/receipts.test.ts`), `expected.json` and a README on adding photos are in. Waiting on Sky's 20 photos and credentials.
+- [x] M4.12 E2E: split save; discard deletes object; RLS blocks reading another user's object. `tests/e2e/m4-receipts.spec.ts` also covers X-close, not-a-receipt, low confidence, non-RM, the AI cap, and History's collapsed group with its image removed when the last row is deleted; `supabase/tests/storage.test.sql` pins the bucket and its policies.
 
 **Done when:** demo passes; all F4 and F6 criteria pass; F5 criterion 3 passes.
 

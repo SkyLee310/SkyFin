@@ -83,7 +83,7 @@ flowchart LR
 | `app/**/page.tsx` (Server Components) | Vercel | session client (RLS) | No |
 | `actions/*.ts` (Server Actions) | Vercel | session client (RLS) | Yes |
 | `app/api/cron/daily/route.ts` | Vercel (cron) | admin client (service role) | Yes |
-| `components/**` client components | iPhone | browser client (RLS) for Storage upload only | No |
+| `components/**` client components | iPhone | none: receipts go to Storage through a signed upload URL from `createReceiptUpload` (D31) | No |
 
 ### 3.3 Key flows
 
@@ -111,11 +111,15 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant U as Chat UI
+  participant C as createReceiptUpload
   participant S as Storage
   participant A as parseReceipt
   participant G as Gemini
   U->>U: resize to 1600px, JPEG
-  U->>S: upload {uid}/{uuid}.jpg
+  U->>C: new upload
+  C->>S: createSignedUploadUrl({uid}/{uuid}.jpg) (session client, insert policy)
+  C-->>U: path + signed URL
+  U->>S: PUT JPEG to the signed URL (progress via XHR)
   U->>A: parseReceipt(path)
   A->>S: download bytes (session client)
   A->>G: inlineData image + prompt + schema
@@ -406,7 +410,8 @@ export const SaveInput = z.object({
 | `listCategories` | `{ kind? }` | `Category[]` | Active only unless `includeArchived` |
 | `createCategory` / `renameCategory` / `archiveCategory` | name, kind / id, name / id | `Category` | Unique per user + kind |
 | `parseTextEntry` | `{ message, sessionDrafts: Draft[] }` | `{ reply, language, drafts: Draft[] }` | Calls `consume_ai_call`; returns updated `sessionDrafts` for corrections |
-| `parseReceipt` | `{ path }` | `{ draft: Draft }` | `NOT_RECEIPT` → deletes object; `AI_LIMIT` when cap hit |
+| `createReceiptUpload` | — | `{ path, signedUrl }` | Server picks `{uid}/{uuid}.jpg`; the browser PUTs the JPEG to `signedUrl` (D31) |
+| `parseReceipt` | `{ path }` | `{ draft: Draft }` | Path must be the caller's own; `NOT_RECEIPT` → deletes object; `AI_LIMIT` when cap hit; on `AI_LIMIT` / `AI_FAILED` the photo is kept for manual entry |
 | `discardReceipt` | `{ path }` | — | Deletes the object |
 | `saveTransactions` | `SaveInput` | `{ ids: string[], warning?: Warning }` | One insert; sets `receipt_group_id` when `drafts.length > 1` and a receipt exists |
 | `updateTransaction` | `{ id, patch: Partial<Draft> }` | `{ warning? }` | |
@@ -525,7 +530,7 @@ skyfin/
 │   │   ├── ui/                     # shadcn generated
 │   │   ├── auth/google-sign-in-button.tsx
 │   │   ├── nav/bottom-nav.tsx
-│   │   ├── confirmation-card/      # sheet, draft-row, split-editor, payment-toggle
+│   │   ├── confirmation-card/      # sheet, split-editor, split.ts (remainder in sen), payment-toggle
 │   │   ├── chat/                   # message-list, composer, receipt-button
 │   │   ├── dashboard/              # budget-card, net-flow-card, category-donut, payment-bar, needs-wants-bar
 │   │   ├── history/                # filters, day-group, receipt-group
@@ -535,7 +540,7 @@ skyfin/
 │   ├── lib/
 │   │   ├── supabase/
 │   │   │   ├── server.ts           # session client for RSC/actions
-│   │   │   ├── browser.ts          # upload only
+│   │   │   ├── browser.ts          # unused since D31; kept for client-side reads if one is ever needed
 │   │   │   ├── admin.ts            # service role, imported only by cron
 │   │   │   └── proxy.ts            # updateSession: refresh the session cookie
 │   │   ├── ai/
@@ -550,6 +555,8 @@ skyfin/
 │   │   ├── queries/                # dashboard.ts, history.ts, audits.ts, stats.ts
 │   │   ├── push.ts                 # sendPush, prune dead endpoints
 │   │   ├── image.ts                # client resize → JPEG
+│   │   ├── receipts.ts             # {uid}/{uuid}.jpg paths and the own-folder check
+│   │   ├── history-groups.ts       # collapse split rows into one History entry
 │   │   ├── money.ts                # parseRMToSen, numericToSen, senToNumeric, formatRM
 │   │   ├── dates.ts                # todayMYT, monthRangeMYT, isLastDayOfMonthMYT,
 │   │   │                           #   daysLeftInMonthMYT = D − d + 1 (today counts; last day shows 1)
