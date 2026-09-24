@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { senToNumeric } from "@/lib/money";
+import { RECEIPTS_BUCKET, isOwnReceiptPath } from "@/lib/receipts";
 import {
   SaveInput,
   Draft,
@@ -52,6 +53,10 @@ export async function saveTransactions(
   }
 
   const { drafts, receiptPath } = parsed.data;
+  // Only the caller's own upload can go on a row (F1-2); the path is shared by every split row.
+  if (receiptPath !== null && !isOwnReceiptPath(receiptPath, user.id)) {
+    return { ok: false, code: "VALIDATION", message: "Invalid receipt path" };
+  }
   const isSplitGroup = drafts.length > 1 && !!receiptPath;
   const receiptGroupId = isSplitGroup ? randomUUID() : null;
 
