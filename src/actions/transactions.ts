@@ -158,14 +158,29 @@ export async function deleteTransaction(params: {
     return { ok: false, code: "UNAUTHENTICATED", message: "User not authenticated" };
   }
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("transactions")
     .delete()
     .eq("id", params.id)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("receipt_url")
+    .maybeSingle();
 
   if (error) {
     return { ok: false, code: "NOT_FOUND", message: error.message };
+  }
+
+  // The last row of a receipt takes its image with it. Through the Storage API: a SQL delete
+  // would leave the file behind. Best effort; the daily sweep removes any orphan left over.
+  const receiptPath = (deleted as { receipt_url: string | null } | null)?.receipt_url;
+  if (receiptPath) {
+    const { count } = await supabase
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("receipt_url", receiptPath);
+    if (count === 0) {
+      await supabase.storage.from(RECEIPTS_BUCKET).remove([receiptPath]);
+    }
   }
 
   revalidatePath("/history");
