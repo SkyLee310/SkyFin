@@ -132,7 +132,12 @@ export function HistoryView({
           onClick={() => handleEditClick(tx)}
         >
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-slate-900 line-clamp-1 capitalize">
+            {/* item_label is lowercase ("nasi lemak"); merchant names keep their own casing. */}
+            <span
+              className={`font-semibold text-sm text-slate-900 line-clamp-1 ${
+                !nested && !tx.merchant && tx.item_label ? "capitalize" : ""
+              }`}
+            >
               {nested ? tx.category_name : tx.merchant || tx.item_label || tx.category_name}
             </span>
           </div>

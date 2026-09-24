@@ -65,7 +65,11 @@ export function DraftStack({
                 className="flex-1 min-h-[44px] flex flex-col items-start text-left"
                 aria-label={`Edit ${title}`}
               >
-                <span className="font-semibold text-sm text-slate-900 capitalize line-clamp-1">{title}</span>
+                <span
+                  className={`font-semibold text-sm text-slate-900 line-clamp-1 ${!d.merchant && d.itemLabel ? "capitalize" : ""}`}
+                >
+                  {title}
+                </span>
                 <span className="flex flex-wrap items-center gap-1.5 mt-1">
                   <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-white text-slate-600 border border-slate-200">
                     {category?.name ?? "Others"}
