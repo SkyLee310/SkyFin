@@ -85,8 +85,12 @@ select is_empty($$ select name from storage.objects where bucket_id = 'receipts'
 
 -- ============ A IS UNTOUCHED ============
 reset role;
+-- Scoped to A's and B's folders: E2E runs leave other users' objects in the local bucket.
 select results_eq(
-  $$ select name from storage.objects where bucket_id = 'receipts' order by name $$,
+  $$ select name from storage.objects
+     where bucket_id = 'receipts'
+       and (storage.foldername(name))[1] in ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+     order by name $$,
   $$ values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a.jpg'::text), ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/b.jpg') $$,
   'A''s receipt is still there'
 );
