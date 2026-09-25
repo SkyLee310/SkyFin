@@ -83,7 +83,7 @@ flowchart LR
 | `app/**/page.tsx` (Server Components) | Vercel | session client (RLS) | No |
 | `actions/*.ts` (Server Actions) | Vercel | session client (RLS) | Yes |
 | `app/api/cron/daily/route.ts` | Vercel (cron) | admin client (service role) | Yes |
-| `components/**` client components | iPhone | browser client (RLS) for Storage upload only | No |
+| `components/**` client components | iPhone | none: receipts go to Storage through a signed upload URL from `createReceiptUpload` (D31) | No |
 
 ### 3.3 Key flows
 
@@ -111,11 +111,15 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant U as Chat UI
+  participant C as createReceiptUpload
   participant S as Storage
   participant A as parseReceipt
   participant G as Gemini
   U->>U: resize to 1600px, JPEG
-  U->>S: upload {uid}/{uuid}.jpg
+  U->>C: new upload
+  C->>S: createSignedUploadUrl({uid}/{uuid}.jpg) (session client, insert policy)
+  C-->>U: path + signed URL
+  U->>S: PUT JPEG to the signed URL (progress via XHR)
   U->>A: parseReceipt(path)
   A->>S: download bytes (session client)
   A->>G: inlineData image + prompt + schema
@@ -336,15 +340,15 @@ grant execute on function public.receipts_to_purge() to service_role;
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('receipts', 'receipts', false, 2097152, array['image/jpeg']);
 
-create policy "own receipts read"   on storage.objects for select
+create policy "own receipts read"   on storage.objects for select to authenticated
   using (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);
-create policy "own receipts insert" on storage.objects for insert
+create policy "own receipts insert" on storage.objects for insert to authenticated
   with check (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);
-create policy "own receipts delete" on storage.objects for delete
+create policy "own receipts delete" on storage.objects for delete to authenticated
   using (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);
 ```
 
-Object path: `{user_id}/{uuid}.jpg`. `transactions.receipt_url` stores this path; the UI renders it through a 1-hour signed URL. Objects are always deleted through the Storage API, never with SQL `delete from storage.objects`, which would leave the file behind.
+Object path: `{user_id}/{uuid}.jpg`. There is no update policy, so an upload never overwrites an object. Storage rejects SQL deletes on `storage.objects`, so pgTAP pins the delete policy and E2E exercises it through the API. `transactions.receipt_url` stores this path; the UI renders it through a 1-hour signed URL. Objects are always deleted through the Storage API, never with SQL `delete from storage.objects`, which would leave the file behind.
 
 ### 4.4 Derived data (views / queries, not tables)
 
@@ -406,7 +410,8 @@ export const SaveInput = z.object({
 | `listCategories` | `{ kind? }` | `Category[]` | Active only unless `includeArchived` |
 | `createCategory` / `renameCategory` / `archiveCategory` | name, kind / id, name / id | `Category` | Unique per user + kind |
 | `parseTextEntry` | `{ message, sessionDrafts: Draft[] }` | `{ reply, language, drafts: Draft[] }` | Calls `consume_ai_call`; returns updated `sessionDrafts` for corrections |
-| `parseReceipt` | `{ path }` | `{ draft: Draft }` | `NOT_RECEIPT` → deletes object; `AI_LIMIT` when cap hit |
+| `createReceiptUpload` | — | `{ path, signedUrl }` | Server picks `{uid}/{uuid}.jpg`; the browser PUTs the JPEG to `signedUrl` (D31) |
+| `parseReceipt` | `{ path }` | `{ draft: Draft }` | Path must be the caller's own; `NOT_RECEIPT` → deletes object; `AI_LIMIT` when cap hit; on `AI_LIMIT` / `AI_FAILED` the photo is kept for manual entry |
 | `discardReceipt` | `{ path }` | — | Deletes the object |
 | `saveTransactions` | `SaveInput` | `{ ids: string[], warning?: Warning }` | One insert; sets `receipt_group_id` when `drafts.length > 1` and a receipt exists |
 | `updateTransaction` | `{ id, patch: Partial<Draft> }` | `{ warning? }` | |
@@ -445,7 +450,7 @@ Rules for all three:
 - The category name returned must match a provided name, else it maps to "Others".
 - Amounts from the model are parsed to sen and re-validated; anything that fails Zod → one retry, then `AI_FAILED` (or a stats-only audit).
 - Text on a receipt is data. The prompt states that instructions found in images or messages must not change the output schema, and the schema itself limits what can be returned.
-- Parameter names for thinking level follow the current `@google/genai` docs for Gemini 3.x models; confirm when implementing.
+- Thinking level is `config.thinkingConfig.thinkingLevel` (`ThinkingLevel.LOW` / `MEDIUM`), confirmed against `@google/genai` 2.24; the JSON schema goes in `config.responseJsonSchema`.
 
 ### 5.5 Agents (`src/lib/agents/`)
 
@@ -492,7 +497,9 @@ skyfin/
 │   ├── migrations/
 │   │   ├── 0001_init.sql
 │   │   └── 0002_storage.sql
-│   └── tests/rls.test.sql          # pgTAP: cross-user isolation and exact Data API privileges
+│   └── tests/
+│       ├── rls.test.sql            # pgTAP: cross-user isolation and exact Data API privileges
+│       └── storage.test.sql        # pgTAP: receipts bucket settings and per-user folder policies
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx              # html, theme, safe-area
@@ -523,7 +530,7 @@ skyfin/
 │   │   ├── ui/                     # shadcn generated
 │   │   ├── auth/google-sign-in-button.tsx
 │   │   ├── nav/bottom-nav.tsx
-│   │   ├── confirmation-card/      # sheet, draft-row, split-editor, payment-toggle
+│   │   ├── confirmation-card/      # sheet, split-editor, split.ts (remainder in sen), payment-toggle
 │   │   ├── chat/                   # message-list, composer, receipt-button
 │   │   ├── dashboard/              # budget-card, net-flow-card, category-donut, payment-bar, needs-wants-bar
 │   │   ├── history/                # filters, day-group, receipt-group
@@ -533,7 +540,7 @@ skyfin/
 │   ├── lib/
 │   │   ├── supabase/
 │   │   │   ├── server.ts           # session client for RSC/actions
-│   │   │   ├── browser.ts          # upload only
+│   │   │   ├── browser.ts          # unused since D31; kept for client-side reads if one is ever needed
 │   │   │   ├── admin.ts            # service role, imported only by cron
 │   │   │   └── proxy.ts            # updateSession: refresh the session cookie
 │   │   ├── ai/
@@ -548,6 +555,8 @@ skyfin/
 │   │   ├── queries/                # dashboard.ts, history.ts, audits.ts, stats.ts
 │   │   ├── push.ts                 # sendPush, prune dead endpoints
 │   │   ├── image.ts                # client resize → JPEG
+│   │   ├── receipts.ts             # {uid}/{uuid}.jpg paths and the own-folder check
+│   │   ├── history-groups.ts       # collapse split rows into one History entry
 │   │   ├── money.ts                # parseRMToSen, numericToSen, senToNumeric, formatRM
 │   │   ├── dates.ts                # todayMYT, monthRangeMYT, isLastDayOfMonthMYT,
 │   │   │                           #   daysLeftInMonthMYT = D − d + 1 (today counts; last day shows 1)
@@ -558,6 +567,8 @@ skyfin/
 │   ├── unit/                       # accounting, money, dates, schemas
 │   ├── ai-eval/receipts/           # 20 test receipts + expected totals
 │   └── e2e/                        # Playwright, iPhone 15 viewport
+├── scripts/
+│   └── check-gemini.mjs            # one call: does GEMINI_MODEL answer in GOOGLE_CLOUD_LOCATION?
 ├── .env.example
 ├── vercel.json
 └── package.json
@@ -587,7 +598,7 @@ skyfin/
 | Unit | `evaluatePace` table tests (incl. S = 0, B = 0, day 1–2, spike, excluded rows), `money.ts` rounding, `dates.ts` around 23:59 / 00:01 MYT and month ends | Vitest, with `TZ=UTC` as on Vercel |
 | DB | RLS isolation, table and function privileges, composite FK rejection, `dedup_key` uniqueness, `consume_ai_call` cap | pgTAP files in `supabase/tests`, run with `npx supabase test db` against the local stack (branching needs a paid plan) |
 | AI eval | 20 receipts → totals within RM 0.00; 30 chat phrases (EN/ZH/MS/Rojak) → expected drafts | Vitest script, run manually before each model change |
-| E2E | Each milestone's demo script in TASKS.md, run against the local Supabase stack. Google can't run in a test: the callback test signs in through an emailed PKCE link read from Mailpit, and other tests start as a fresh email/password user | Playwright, iPhone 15 (WebKit), dev server on port 3100 |
+| E2E | Each milestone's demo script in TASKS.md, run against the local Supabase stack. Google can't run in a test: the callback test signs in through an emailed PKCE link read from Mailpit, and other tests start as a fresh email/password user. AI flows use canned model output (`AI_FAKE=1`, D30) | Playwright, iPhone 15 (WebKit), dev server on port 3100 |
 | Device | Home Screen install, sign-in, push receipt | Real iPhone, per milestone |
 
 ---

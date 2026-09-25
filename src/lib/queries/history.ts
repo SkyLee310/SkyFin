@@ -5,6 +5,7 @@ import { monthRangeMYT, todayMYT } from "@/lib/dates";
 import { toSen } from "@/lib/money";
 import { PaymentMethod } from "@/lib/validation/schemas";
 import { TransactionRecord } from "@/actions/transactions";
+import { RECEIPTS_BUCKET } from "@/lib/receipts";
 
 export interface HistoryItem extends TransactionRecord {
   category_name: string;
@@ -96,4 +97,23 @@ export async function getTransactionsHistory(
   }
 
   return Array.from(groupsMap.values());
+}
+
+/**
+ * 1-hour signed URLs for the receipt photos on these rows, keyed by object path (TECH_SPEC §4.3).
+ * Made with the session client, so RLS still decides which photos the user can see.
+ */
+export async function getReceiptThumbnails(dayGroups: DayGroup[]): Promise<Record<string, string>> {
+  const paths = [
+    ...new Set(dayGroups.flatMap((g) => g.transactions.map((t) => t.receipt_url).filter((p): p is string => !!p))),
+  ];
+  if (paths.length === 0) return {};
+
+  const supabase = await createClient();
+  const { data } = await supabase.storage.from(RECEIPTS_BUCKET).createSignedUrls(paths, 3600);
+  const urls: Record<string, string> = {};
+  for (const item of data ?? []) {
+    if (item.path && item.signedUrl && !item.error) urls[item.path] = item.signedUrl;
+  }
+  return urls;
 }

@@ -235,6 +235,8 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D26 | Sign-up lock | Sign-ups off after Sky's first sign-in, before M3; Email provider off unless D14 |
 | D27 | Test database | pgTAP and E2E run on the local Supabase stack, never the cloud project |
 | D28 | Function region | Vercel functions in `sin1` (Singapore), next to Supabase |
+| D30 | Fake AI in E2E | With `AI_FAKE=1` outside production, the AI parsers use canned model output (`src/lib/ai/fake.ts`) so E2E runs without Gemini; accuracy is measured by `test:ai-eval` |
+| D31 | Receipt upload | Server picks `{uid}/{uuid}.jpg` and returns a signed upload URL; the browser uploads straight to Storage (proposed, awaiting Sky) |
 
 ---
 

@@ -13,10 +13,12 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:ai-eval": "vitest run --config vitest.ai-eval.config.mts"
+    "test:ai-eval": "vitest run --config vitest.ai-eval.config.mts",
+    "check:gemini": "node --env-file=.env.local scripts/check-gemini.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
+    "@google/genai": "^2.24.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "class-variance-authority": "^0.7.1",

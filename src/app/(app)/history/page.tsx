@@ -3,7 +3,7 @@ import "server-only";
 import React from "react";
 import { todayMYT } from "@/lib/dates";
 import { listCategories } from "@/actions/categories";
-import { getTransactionsHistory } from "@/lib/queries/history";
+import { getReceiptThumbnails, getTransactionsHistory } from "@/lib/queries/history";
 import type { PaymentMethod } from "@/lib/validation/schemas";
 import { HistoryView } from "./history-view";
 
@@ -41,6 +41,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
   ]);
 
   const categories = categoriesRes.ok ? categoriesRes.data : [];
+  const receiptUrls = await getReceiptThumbnails(dayGroups);
 
   return (
     <HistoryView
@@ -51,6 +52,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       initialEssential={selectedEssential === undefined ? null : selectedEssential}
       categories={categories}
       dayGroups={dayGroups}
+      receiptUrls={receiptUrls}
     />
   );
 }

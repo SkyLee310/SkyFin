@@ -38,6 +38,8 @@ export default defineConfig({
     // Wait for the port, not a URL: a URL check follows the proxy's redirects, so readiness
     // would depend on app routes.
     port: PORT,
+    // D30: canned AI output instead of Gemini (src/lib/ai/fake.ts); ignored in production builds.
+    env: { AI_FAKE: "1" },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

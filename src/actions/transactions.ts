@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { senToNumeric } from "@/lib/money";
+import { RECEIPTS_BUCKET, isOwnReceiptPath } from "@/lib/receipts";
 import {
   SaveInput,
   Draft,
@@ -52,6 +53,10 @@ export async function saveTransactions(
   }
 
   const { drafts, receiptPath } = parsed.data;
+  // Only the caller's own upload can go on a row (F1-2); the path is shared by every split row.
+  if (receiptPath !== null && !isOwnReceiptPath(receiptPath, user.id)) {
+    return { ok: false, code: "VALIDATION", message: "Invalid receipt path" };
+  }
   const isSplitGroup = drafts.length > 1 && !!receiptPath;
   const receiptGroupId = isSplitGroup ? randomUUID() : null;
 
@@ -153,14 +158,29 @@ export async function deleteTransaction(params: {
     return { ok: false, code: "UNAUTHENTICATED", message: "User not authenticated" };
   }
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("transactions")
     .delete()
     .eq("id", params.id)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("receipt_url")
+    .maybeSingle();
 
   if (error) {
     return { ok: false, code: "NOT_FOUND", message: error.message };
+  }
+
+  // The last row of a receipt takes its image with it. Through the Storage API: a SQL delete
+  // would leave the file behind. Best effort; the daily sweep removes any orphan left over.
+  const receiptPath = (deleted as { receipt_url: string | null } | null)?.receipt_url;
+  if (receiptPath) {
+    const { count } = await supabase
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("receipt_url", receiptPath);
+    if (count === 0) {
+      await supabase.storage.from(RECEIPTS_BUCKET).remove([receiptPath]);
+    }
   }
 
   revalidatePath("/history");
