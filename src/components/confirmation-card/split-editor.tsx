@@ -91,7 +91,7 @@ export function SplitEditor({ totalSen, rows, categories, onChange, onCancel }: 
               const category = expenseCategories.find((c) => c.id === e.target.value);
               update(row.key, { categoryId: e.target.value, isEssential: category?.default_essential ?? row.isEssential });
             }}
-            className="w-full min-h-[44px] px-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900"
+            className="w-full min-h-[44px] px-3 bg-white border border-slate-200 rounded-xl text-base text-slate-900"
           >
             {expenseCategories.map((c) => (
               <option key={c.id} value={c.id}>

@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { parseRMToSen, senToNumeric } from "@/lib/money";
 
 interface AmountInputProps {
   amountSen: number;
@@ -11,24 +12,27 @@ interface AmountInputProps {
   highlight?: boolean;
 }
 
+// What may sit in the field while typing: digits, then at most one "." and 2 decimals.
+const PARTIAL_AMOUNT = /^\d*(\.\d{0,2})?$/;
+
 export function AmountInput({ amountSen, onChange, error, label = "Amount", highlight = false }: AmountInputProps) {
-  // Input raw value formatted as decimal e.g. "12.50"
-  const rawValue = amountSen > 0 ? (amountSen / 100).toFixed(2) : "";
+  // Keeps exactly what was typed ("12.", ".5") while the parent holds sen. Reformatting to
+  // "12.00" on every key would turn the next digit into a third decimal and swallow it.
+  const [text, setText] = useState(amountSen > 0 ? senToNumeric(amountSen) : "");
+  const textSen = parseRMToSen(text) ?? 0;
+  if (textSen !== amountSen) {
+    // The amount changed from outside (a new draft), so show that instead.
+    setText(amountSen > 0 ? senToNumeric(amountSen) : "");
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[^0-9.]/g, "");
-    if (!val) {
-      onChange(0);
-      return;
-    }
-    const parts = val.split(".");
-    if (parts.length > 2) return; // Prevent multiple dots
-    if (parts[1] && parts[1].length > 2) return; // Max 2 decimal places
-
-    const num = parseFloat(val);
-    if (!isNaN(num)) {
-      onChange(Math.round(num * 100));
-    }
+    // Some iOS regions put "," on the decimal keypad.
+    const next = e.target.value.replace(",", ".");
+    if (!PARTIAL_AMOUNT.test(next)) return;
+    const sen = next === "" || next === "." ? 0 : parseRMToSen(next);
+    if (sen === null) return;
+    setText(next);
+    onChange(sen);
   };
 
   return (
@@ -44,7 +48,7 @@ export function AmountInput({ amountSen, onChange, error, label = "Amount", high
           id="confirmation-amount-input"
           type="text"
           inputMode="decimal"
-          value={rawValue}
+          value={text}
           onChange={handleChange}
           placeholder="0.00"
           aria-invalid={highlight || undefined}

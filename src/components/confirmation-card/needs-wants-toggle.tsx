@@ -18,7 +18,7 @@ export function NeedsWantsToggle({ isEssential, onChange }: NeedsWantsToggleProp
           type="button"
           id="toggle-needs"
           onClick={() => onChange(true)}
-          className={`min-h-[40px] flex items-center justify-center font-medium text-sm rounded-lg transition-all ${
+          className={`min-h-[44px] flex items-center justify-center font-medium text-sm rounded-lg transition-all ${
             isEssential
               ? "bg-white text-emerald-700 shadow-sm font-semibold"
               : "text-slate-600 hover:text-slate-900"
@@ -30,7 +30,7 @@ export function NeedsWantsToggle({ isEssential, onChange }: NeedsWantsToggleProp
           type="button"
           id="toggle-wants"
           onClick={() => onChange(false)}
-          className={`min-h-[40px] flex items-center justify-center font-medium text-sm rounded-lg transition-all ${
+          className={`min-h-[44px] flex items-center justify-center font-medium text-sm rounded-lg transition-all ${
             !isEssential
               ? "bg-white text-amber-700 shadow-sm font-semibold"
               : "text-slate-600 hover:text-slate-900"

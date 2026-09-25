@@ -55,6 +55,32 @@ test.describe("M2: Manual Logging Flow (iPhone 15)", () => {
     await expect(saveBtn).toBeEnabled();
   });
 
+  test("the amount can be typed one key at a time, as on a phone keyboard", async ({ page }) => {
+    await page.goto("/chat");
+    await page.locator("#btn-add-manual-plus").click();
+    const amount = page.locator("#confirmation-amount-input");
+
+    // fill() pastes the whole value; a phone keyboard sends one key at a time.
+    await amount.pressSequentially("12.50");
+    await expect(amount).toHaveValue("12.50");
+
+    await amount.press("Backspace");
+    await amount.press("Backspace");
+    await amount.press("Backspace");
+    await expect(amount).toHaveValue("12");
+    await amount.pressSequentially(".3");
+    await expect(amount).toHaveValue("12.3");
+
+    // Anything that isn't a ringgit amount with up to 2 decimals is refused as typed.
+    await amount.pressSequentially("45");
+    await expect(amount).toHaveValue("12.34");
+
+    await page.locator("#category-selector-dropdown").selectOption({ index: 1 });
+    await page.locator("#payment-method-cash").click();
+    await page.locator("#btn-confirm-save").click();
+    await expect(page.getByText("Transaction recorded successfully!")).toBeVisible();
+  });
+
   test("Category management in Audit settings", async ({ page }) => {
     await page.goto("/audit");
 

@@ -221,7 +221,7 @@ function ConfirmationCardForm({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+          className="w-11 h-11 -mr-2 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100"
         >
           <X className="w-5 h-5" />
         </button>
@@ -274,7 +274,7 @@ function ConfirmationCardForm({
             type="button"
             id="type-expense-btn"
             onClick={() => handleTypeChange("expense")}
-            className={`min-h-[40px] text-sm font-semibold rounded-lg transition-all ${
+            className={`min-h-[44px] text-sm font-semibold rounded-lg transition-all ${
               type === "expense"
                 ? "bg-white text-slate-900 shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
@@ -286,7 +286,7 @@ function ConfirmationCardForm({
             type="button"
             id="type-income-btn"
             onClick={() => handleTypeChange("income")}
-            className={`min-h-[40px] text-sm font-semibold rounded-lg transition-all ${
+            className={`min-h-[44px] text-sm font-semibold rounded-lg transition-all ${
               type === "income"
                 ? "bg-white text-emerald-700 shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
@@ -354,7 +354,7 @@ function ConfirmationCardForm({
             value={merchant}
             onChange={(e) => setMerchant(e.target.value)}
             maxLength={80}
-            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full min-h-[44px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
@@ -370,7 +370,7 @@ function ConfirmationCardForm({
               max={todayMYT()}
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full min-h-[44px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
         </div>
@@ -387,7 +387,7 @@ function ConfirmationCardForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={200}
-            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full min-h-[44px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 

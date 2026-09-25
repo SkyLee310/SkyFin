@@ -26,7 +26,7 @@ A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth +
 | Layer | Choice | Notes |
 |---|---|---|
 | Framework | Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Node 24 | Server Components for reads, Server Actions for writes; session refresh in `src/proxy.ts` (Next 16's name for `middleware.ts`) |
-| Styling / UI | Tailwind CSS, shadcn/ui, Lucide icons | shadcn `Drawer` for the Confirmation Card |
+| Styling / UI | Tailwind CSS, shadcn/ui, Lucide icons | shadcn `Drawer` for the Confirmation Card; dark mode mirrors the Tailwind colour scales in `globals.css` (`prefers-color-scheme`), so components need no `dark:` classes |
 | Charts | Recharts | Tap-to-show tooltips only |
 | Validation | Zod | Shared schemas for actions, AI output and forms |
 | Dates | `date-fns` + `@date-fns/tz` | All business dates in `Asia/Kuala_Lumpur` |
@@ -540,7 +540,6 @@ skyfin/
 │   ├── lib/
 │   │   ├── supabase/
 │   │   │   ├── server.ts           # session client for RSC/actions
-│   │   │   ├── browser.ts          # unused since D31; kept for client-side reads if one is ever needed
 │   │   │   ├── admin.ts            # service role, imported only by cron
 │   │   │   └── proxy.ts            # updateSession: refresh the session cookie
 │   │   ├── ai/
@@ -568,6 +567,7 @@ skyfin/
 │   ├── ai-eval/receipts/           # 20 test receipts + expected totals
 │   └── e2e/                        # Playwright, iPhone 15 viewport
 ├── scripts/
+│   ├── check-client-bundle.mjs     # postbuild: fails the build if a secret reached .next/static (M1.18)
 │   └── check-gemini.mjs            # one call: does GEMINI_MODEL answer in GOOGLE_CLOUD_LOCATION?
 ├── .env.example
 ├── vercel.json
@@ -581,7 +581,7 @@ skyfin/
 - [ ] RLS on every table; `supabase/tests/rls.test.sql` proves a second user sees zero rows.
 - [ ] Every migration that creates a table or function revokes all privileges from `anon`, `authenticated` and `service_role` (and `public` for functions), then grants only what the app needs: the defaults still give those roles `truncate`, `references` and `trigger` on new tables and `execute` on new functions. `rls.test.sql` asserts the exact set for each role.
 - [ ] Composite FK prevents cross-user `category_id`.
-- [ ] `lib/supabase/admin.ts` and `lib/ai/*` import `server-only`; CI greps the client build for `GEMINI`, `GOOGLE_SERVICE_ACCOUNT_KEY`, `BEGIN PRIVATE KEY`, `SUPABASE_SECRET_KEY`, `sb_secret_`, `VAPID_PRIVATE`.
+- [ ] `lib/supabase/admin.ts` and `lib/ai/*` import `server-only`; `npm run build` then runs `scripts/check-client-bundle.mjs` (postbuild), which fails the build if `.next/static` contains `GEMINI`, `GOOGLE_SERVICE_ACCOUNT_KEY`, `BEGIN PRIVATE KEY`, `SUPABASE_SECRET_KEY`, `sb_secret_`, `VAPID_PRIVATE`, or the value of any server-only secret set in the build's environment.
 - [ ] The Vertex AI service account has only the Vertex AI User role (`roles/aiplatform.user`); a GCP budget alert is set; a leaked key is deleted in GCP and replaced (D22).
 - [ ] Supabase Auth sign-ups are disabled after Sky's first sign-in (D1); the Email provider stays off unless the D14 OTP fallback is in use.
 - [ ] Every action calls `getUser()` (not `getSession()`) before touching data.
