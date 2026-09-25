@@ -6,6 +6,7 @@ import { z } from "zod";
 import { todayMYT } from "@/lib/dates";
 import { Draft } from "@/lib/validation/schemas";
 import { fakeParseReceipt } from "./fake";
+import { isPermanentAiError } from "./errors";
 import { generateJson, isFakeAiEnabled } from "./generate";
 import {
   type CategoryRef,
@@ -104,6 +105,8 @@ export async function parseReceipt(
       return mapReceiptOutput(JSON.parse(await model(image, prompt)), ctx);
     } catch (error) {
       lastError = error;
+      // Wrong settings or a refused key fail the same way twice; don't pay for a second call.
+      if (isPermanentAiError(error)) break;
     }
   }
   throw new AiFailedError(lastError);

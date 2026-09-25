@@ -3,6 +3,7 @@ import "server-only";
 import { ThinkingLevel } from "@google/genai";
 import { z } from "zod";
 import { rmAmountsIn } from "@/lib/agents/audit-content";
+import { isPermanentAiError } from "./errors";
 import { fakeAudit } from "./fake";
 import { generateJson, isFakeAiEnabled } from "./generate";
 import { AUDIT_RESPONSE_SCHEMA, AUDIT_SYSTEM, type AuditPromptInput, buildAuditPrompt } from "./prompts/audit";
@@ -69,6 +70,7 @@ export async function writeAuditText(
       return mapAuditOutput(JSON.parse(await model(prompt)), optionIds, allowedFigures);
     } catch (error) {
       console.error("audit text", error);
+      if (isPermanentAiError(error)) break;
     }
   }
   return null;

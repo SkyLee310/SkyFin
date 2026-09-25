@@ -106,7 +106,7 @@ export default function ChatPage() {
       return;
     }
     if (outcome.kind === "manual") {
-      const lead = outcome.code === "AI_LIMIT" ? "Daily AI limit reached." : "Couldn't read this receipt.";
+      const lead = outcome.code === "AI_LIMIT" ? "Daily AI limit reached." : outcome.message;
       addMessage({ role: "assistant", text: `${lead} Fill in the card by hand; the photo is attached.`, isError: true });
     }
     setEditingClientId(null);

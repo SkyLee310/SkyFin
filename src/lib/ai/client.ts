@@ -1,6 +1,7 @@
 import "server-only";
 
 import { GoogleGenAI } from "@google/genai";
+import { AiConfigError } from "./errors";
 
 // Gemini on Vertex AI (D22). This module is the only place that reads the service-account key,
 // so local and production share one code path.
@@ -22,17 +23,17 @@ export function getGenAI(): GoogleGenAI {
   const project = process.env.GOOGLE_CLOUD_PROJECT?.trim();
   const encodedKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim();
   if (!project || !encodedKey) {
-    throw new Error("Gemini is not configured: set GOOGLE_CLOUD_PROJECT and GOOGLE_SERVICE_ACCOUNT_KEY.");
+    throw new AiConfigError("Gemini is not configured: set GOOGLE_CLOUD_PROJECT and GOOGLE_SERVICE_ACCOUNT_KEY.");
   }
 
   let credentials: { client_email?: string; private_key?: string };
   try {
     credentials = JSON.parse(Buffer.from(encodedKey, "base64").toString("utf8"));
   } catch {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY is not base64-encoded service-account JSON.");
+    throw new AiConfigError("GOOGLE_SERVICE_ACCOUNT_KEY is not base64-encoded service-account JSON.");
   }
   if (!credentials.client_email || !credentials.private_key) {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY is missing client_email or private_key.");
+    throw new AiConfigError("GOOGLE_SERVICE_ACCOUNT_KEY is missing client_email or private_key.");
   }
 
   client = new GoogleGenAI({

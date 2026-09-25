@@ -7,6 +7,7 @@ import { todayMYT } from "@/lib/dates";
 import { senToNumeric } from "@/lib/money";
 import { Draft, Lang } from "@/lib/validation/schemas";
 import { fakeParseText } from "./fake";
+import { isPermanentAiError } from "./errors";
 import { generateJson, isFakeAiEnabled } from "./generate";
 import {
   type CategoryRef,
@@ -147,6 +148,8 @@ export async function parseText(
       return mapTextOutput(JSON.parse(await model(prompt)), ctx);
     } catch (error) {
       lastError = error;
+      // Wrong settings or a refused key fail the same way twice; don't pay for a second call.
+      if (isPermanentAiError(error)) break;
     }
   }
   throw new AiFailedError(lastError);
