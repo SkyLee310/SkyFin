@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}));
 
 import { AiFailedError, mapTextOutput, parseText } from "@/lib/ai/parse-text";
 import { modelAmountToSen, normalizeDate } from "@/lib/ai/normalize";
+import { AiConfigError } from "@/lib/ai/errors";
 import type { Draft } from "@/lib/validation/schemas";
 
 // 2026-09-21 12:00 MYT
@@ -138,6 +139,15 @@ describe("mapTextOutput", () => {
 });
 
 describe("parseText", () => {
+  it("doesn't retry when Vertex AI isn't configured, and keeps the reason as the cause", async () => {
+    const missing = new AiConfigError("Gemini is not configured");
+    const model = vi.fn().mockRejectedValue(missing);
+    const error = await parseText("nasi lemak 8.50", { categories, sessionDrafts: [], now }, model).catch((e) => e);
+    expect(model).toHaveBeenCalledTimes(1);
+    expect(error).toBeInstanceOf(AiFailedError);
+    expect(error.cause).toBe(missing);
+  });
+
   it("retries once when the first response is not valid JSON", async () => {
     const model = vi
       .fn()

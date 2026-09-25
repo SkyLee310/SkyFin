@@ -112,7 +112,7 @@ test.describe("M2: Manual Logging Flow (iPhone 15)", () => {
     await page.goto("/");
 
     // Verify Dashboard sections
-    await expect(page.getByText("SkyFin")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "SkyFin", exact: true })).toBeVisible();
     await expect(page.getByText("Monthly Budget", { exact: true })).toBeVisible();
     await expect(page.getByText("Net Cash Flow")).toBeVisible();
   });

@@ -125,3 +125,37 @@ test("dismissing the onboarding sheet leaves a zero-budget card that reopens it"
   await card.click();
   await expect(page.getByRole("heading", { name: "Set your monthly budget" })).toBeVisible();
 });
+
+test("the budget sheet rides above the iOS keyboard instead of behind it", async ({ page, context, baseURL }) => {
+  const user = await createSignedInUser(baseURL!);
+  await context.addCookies(user.cookies);
+  // iOS reports the keyboard only by shrinking the visual viewport; stand in for it here.
+  await page.addInitScript(() => {
+    const viewport = new EventTarget() as EventTarget & { height: number; offsetTop: number; width: number };
+    viewport.height = window.innerHeight;
+    viewport.offsetTop = 0;
+    viewport.width = window.innerWidth;
+    Object.defineProperty(window, "visualViewport", { value: viewport });
+    (window as unknown as { openKeyboard: (px: number) => void }).openKeyboard = (px) => {
+      viewport.height = window.innerHeight - px;
+      viewport.dispatchEvent(new Event("resize"));
+    };
+  });
+
+  await page.goto("/");
+  const sheet = page.locator("[data-slot=sheet-content]");
+  await expect(page.locator("#budget-input")).toBeVisible();
+  const sheetBottom = async () => {
+    const box = await sheet.boundingBox();
+    return Math.round(box!.y + box!.height);
+  };
+  // Polled: the sheet slides in, so it settles at the bottom a moment after it's visible.
+  await expect.poll(sheetBottom).toBe(page.viewportSize()!.height);
+
+  await page.evaluate(() => (window as unknown as { openKeyboard: (px: number) => void }).openKeyboard(336));
+  await expect.poll(sheetBottom).toBe(page.viewportSize()!.height - 336);
+  // The field and Save are above the keyboard and still work.
+  await page.locator("#budget-input").fill("800");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator("#dashboard-remaining-rm")).toHaveText("RM 800.00");
+});

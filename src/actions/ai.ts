@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { AiFailedError, parseText } from "@/lib/ai/parse-text";
 import { parseReceipt as readReceipt } from "@/lib/ai/parse-receipt";
+import { aiFailureMessage } from "@/lib/ai/errors";
 import { RECEIPTS_BUCKET, isOwnReceiptPath, newReceiptPath } from "@/lib/receipts";
 import {
   type ActionResult,
@@ -80,8 +81,9 @@ export async function parseTextEntry(
 
     return { ok: true, data: result };
   } catch (error) {
-    console.error("parseTextEntry", error instanceof AiFailedError ? error.cause : error);
-    return { ok: false, code: "AI_FAILED", message: "Couldn't read that. Try again." };
+    const cause = error instanceof AiFailedError ? error.cause : error;
+    console.error("parseTextEntry", cause);
+    return { ok: false, code: "AI_FAILED", message: aiFailureMessage(cause, "Couldn't read that. Try again.") };
   }
 }
 
@@ -148,8 +150,9 @@ export async function parseReceipt(rawInput: ReceiptPathInput): Promise<ActionRe
     }
     return { ok: true, data: { draft: result.draft } };
   } catch (error) {
-    console.error("parseReceipt", error instanceof AiFailedError ? error.cause : error);
-    return { ok: false, code: "AI_FAILED", message: "Couldn't read this receipt." };
+    const cause = error instanceof AiFailedError ? error.cause : error;
+    console.error("parseReceipt", cause);
+    return { ok: false, code: "AI_FAILED", message: aiFailureMessage(cause, "Couldn't read this receipt.") };
   }
 }
 
