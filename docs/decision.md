@@ -33,7 +33,7 @@ This document records architectural, operational, and organizational decisions f
 | D27 | Test database | pgTAP and E2E run on the local Supabase Docker stack, never the cloud project (Branching needs a paid plan). E2E signs up fresh email/password users, and runs a PKCE email-link sign-in through Mailpit to exercise `/auth/callback`, since Google sign-in can't run in a test. | 2026-09-21 | Approved |
 | D28 | Function region | Vercel functions run in `sin1` (Singapore), next to the Supabase project; the Hobby default `iad1` would add a US–Singapore round trip to every query. | 2026-09-21 | Approved |
 | D30 | Fake AI in E2E | `AI_FAKE=1` (set only by Playwright's web server) makes the parsers use canned model output instead of Gemini; `NODE_ENV=production` always turns it off. See the record below. | 2026-09-24 | Approved |
-| D31 | Receipt upload | The server picks the object path and returns a signed upload URL (`createReceiptUpload`); the browser PUTs the JPEG straight to Storage. The browser Supabase client is not used. See the record below. | 2026-09-24 | Proposed (awaiting Sky) |
+| D31 | Receipt upload | The server picks the object path and returns a signed upload URL (`createReceiptUpload`); the browser PUTs the JPEG straight to Storage. The browser Supabase client is removed. See the record below. | 2026-09-25 | Approved |
 
 ---
 
@@ -98,6 +98,8 @@ This document records architectural, operational, and organizational decisions f
 - **Risk:** the fake drifts from the real model's output shape. Mitigation: the fake goes through the same `ModelTextOutput` schema, so a shape change fails E2E.
 
 ### D31: Receipts upload through a signed upload URL
+
+- **Status:** Approved 2026-09-25: Sky left the call to Claude, and this is the safer of the two designs. `src/lib/supabase/browser.ts`, unused since, is deleted; the browser has no Supabase client at all.
 
 - **Context:** TECH_SPEC had the browser upload receipts with the browser Supabase client. That client needs the session in JavaScript-readable cookies and refreshes the token itself, writing cookies from JavaScript, which iOS caps at 7 days (the reason `lib/supabase/browser.ts` was limited to uploads). It would also let the client choose the object name.
 - **Decision:**

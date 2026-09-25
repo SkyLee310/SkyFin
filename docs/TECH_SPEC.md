@@ -540,7 +540,6 @@ skyfin/
 │   ├── lib/
 │   │   ├── supabase/
 │   │   │   ├── server.ts           # session client for RSC/actions
-│   │   │   ├── browser.ts          # unused since D31; kept for client-side reads if one is ever needed
 │   │   │   ├── admin.ts            # service role, imported only by cron
 │   │   │   └── proxy.ts            # updateSession: refresh the session cookie
 │   │   ├── ai/
