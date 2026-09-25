@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   // Matches --background in each system theme, so the status bar blends into the page.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: dark)", color: "#01020a" },
   ],
 };
 

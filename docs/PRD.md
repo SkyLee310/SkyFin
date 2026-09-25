@@ -236,7 +236,7 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D27 | Test database | pgTAP and E2E run on the local Supabase stack, never the cloud project |
 | D28 | Function region | Vercel functions in `sin1` (Singapore), next to Supabase |
 | D30 | Fake AI in E2E | With `AI_FAKE=1` outside production, the AI parsers use canned model output (`src/lib/ai/fake.ts`) so E2E runs without Gemini; accuracy is measured by `test:ai-eval` |
-| D31 | Receipt upload | Server picks `{uid}/{uuid}.jpg` and returns a signed upload URL; the browser uploads straight to Storage (proposed, awaiting Sky) |
+| D31 | Receipt upload | Server picks `{uid}/{uuid}.jpg` and returns a signed upload URL; the browser uploads straight to Storage, with no browser Supabase client |
 | D32 | Warning levels in practice | Every rule that fires is stored (each with its own dedup key); the banner and the push show the most severe (spike > critical > warning > info). F10-1's example is `critical`, since its pace is 1.50 |
 | D33 | Push and cron in tests | `PUSH_FAKE=1` outside production posts pushes as plain JSON to the endpoint; the cron takes `?date=` and `?user=` only when `VERCEL_ENV` isn't `production` |
 | D34 | Audit figures | The agent pre-computes saving options (with RM savings); the model picks one per tip and writes words only; any RM amount in its text must be a pre-computed figure, else the stats-only text is used |

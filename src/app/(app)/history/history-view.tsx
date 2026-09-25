@@ -214,7 +214,7 @@ export function HistoryView({
               aria-pressed={tx.exclude_from_pace}
               aria-label={tx.exclude_from_pace ? "Count in pace again" : "Mark as one-off purchase"}
               title="One-off purchase"
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 ${
                 tx.exclude_from_pace
                   ? "text-violet-600 bg-violet-50"
                   : "text-slate-300 hover:text-violet-600 hover:bg-violet-50"
@@ -226,7 +226,7 @@ export function HistoryView({
           <button
             type="button"
             onClick={() => setDeleteTargetId(tx.id)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            className="w-11 h-11 -mr-2 rounded-full flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
             aria-label="Delete transaction"
           >
             <Trash2 className="w-4 h-4" />
@@ -256,7 +256,7 @@ export function HistoryView({
             setSelectedMonth(e.target.value);
             applyFilters({ month: e.target.value });
           }}
-          className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[36px]"
+          className="text-base font-semibold bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
         />
       </div>
 
@@ -270,7 +270,7 @@ export function HistoryView({
             setSelectedCategoryId(e.target.value);
             applyFilters({ category: e.target.value });
           }}
-          className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 min-h-[36px]"
+          className="text-base bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 min-h-[44px]"
         >
           <option value="">All Categories</option>
           {categories.map((c) => (
@@ -289,7 +289,7 @@ export function HistoryView({
             setSelectedPayment(val);
             applyFilters({ payment: val });
           }}
-          className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 min-h-[36px]"
+          className="text-base bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 min-h-[44px]"
         >
           <option value="">All Payment</option>
           <option value="Cash">Cash</option>
@@ -315,7 +315,7 @@ export function HistoryView({
             setSelectedEssential(nextEssential);
             applyFilters({ essential: essentialParam });
           }}
-          className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 min-h-[36px]"
+          className="text-base bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 min-h-[44px]"
         >
           <option value="">All Types</option>
           <option value="needs">Needs (Essential)</option>
@@ -414,7 +414,7 @@ export function HistoryView({
               <button
                 type="button"
                 onClick={() => setDeleteTargetId(null)}
-                className="min-h-[40px] px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200"
+                className="min-h-[44px] px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200"
               >
                 Cancel
               </button>
@@ -423,7 +423,7 @@ export function HistoryView({
                 id="btn-confirm-delete"
                 disabled={isDeleting}
                 onClick={handleDelete}
-                className="min-h-[40px] px-3 py-2 text-xs font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 disabled:opacity-50"
+                className="min-h-[44px] px-3 py-2 text-xs font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 disabled:opacity-50"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>

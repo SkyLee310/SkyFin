@@ -64,7 +64,7 @@ export function CategorySelector({
           type="button"
           id="btn-open-add-category"
           onClick={() => setIsAddingNew((prev) => !prev)}
-          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 min-h-[32px] px-2"
+          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 min-h-[44px] px-2"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>{isAddingNew ? "Cancel" : "Add custom"}</span>
@@ -83,7 +83,7 @@ export function CategorySelector({
               placeholder="e.g. Printing, Mamak"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="flex-1 min-h-[44px] px-3 py-2 text-base bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               maxLength={40}
               autoFocus
             />
@@ -91,18 +91,18 @@ export function CategorySelector({
               type="submit"
               id="btn-submit-new-category"
               disabled={isSubmitting || !newCatName.trim()}
-              className="px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 min-h-[40px] flex items-center justify-center gap-1"
+              className="px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-1"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
             </button>
           </div>
           {kind === "expense" && (
-            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+            <label className="flex items-center gap-2 min-h-[44px] text-xs text-slate-600 cursor-pointer">
               <input
                 type="checkbox"
                 checked={newCatEssential}
                 onChange={(e) => setNewCatEssential(e.target.checked)}
-                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                className="w-5 h-5 rounded border-slate-300 accent-emerald-600 focus:ring-emerald-500"
               />
               <span>Default as Essential (Needs)</span>
             </label>
@@ -119,7 +119,7 @@ export function CategorySelector({
             const found = filtered.find((c) => c.id === e.target.value);
             if (found) onSelect(found);
           }}
-          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-base font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
         >
           <option value="" disabled>
             Select a category...

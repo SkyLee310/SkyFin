@@ -27,7 +27,7 @@ export default async function DashboardPage() {
 
         <Link
           href="/chat"
-          className="min-h-[36px] px-3 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 hover:bg-slate-800 transition-colors shadow-sm"
+          className="min-h-[44px] px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 hover:bg-slate-800 transition-colors shadow-sm"
         >
           <Plus className="w-3.5 h-3.5 text-emerald-400" />
           <span>Log</span>
