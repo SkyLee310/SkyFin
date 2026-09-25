@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Last updated | 2026-09-24 |
+| Last updated | 2026-09-25 |
 | Related | [PRD.md](./PRD.md) · [TECH_SPEC.md](./TECH_SPEC.md) |
 
 Seven milestones. Each one is a **vertical slice**: it touches DB → server → UI, is deployed to Vercel, and ends with a demo you can do on the iPhone. No milestone starts until the previous demo passes on a real device.
@@ -97,7 +97,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M3 — Log by chatting
 
-> **Status (2026-09-24):** Code, unit, pgTAP and E2E work is done on branch `claude/keen-noether-reiw5l`. Sky chose to build M3 before M4 even though the M1 device demo is still open. Two tasks wait on a live Vertex AI call, since the build container has no credentials: M3.1 (`npm run check:gemini` confirms the model answers in `GOOGLE_CLOUD_LOCATION`) and M3.9 (`npm run test:ai-eval`, ≥ 27 of 30). E2E covers the demo through the D30 fake model. D26 (sign-ups off) is still Sky's to do before M3 reaches production.
+> **Status (2026-09-25):** Merged to `main` with M4 (PR #4), which deploys to production. Sky chose to build M3 before M4 even though the M1 device demo is still open. E2E covers the demo through the D30 fake model. Two tasks wait on a live Vertex AI call, which the build container can't make: M3.1 (`npm run check:gemini` confirms the model answers in `GOOGLE_CLOUD_LOCATION`) and M3.9 (`npm run test:ai-eval`, ≥ 27 of 30). Not yet confirmed: the Vertex AI env vars are set for Production in Vercel (the Vercel MCP still 404s on this project, see M1.3; env changes need a redeploy), and D26 sign-ups are off (the Auth setting isn't reachable from the build container). As of 2026-09-25, `auth.users` holds only Sky's Google account.
 
 **Demo:** Chat: "Makan nasi lemak RM8.50 pakai eWallet" → card pre-filled (RM 8.50, Food & Drinks, eWallet, Needs) → Save. Then "nasi lemak 8.50, boba 12" → two stacked drafts, boba = Wants → "actually boba RM13" → draft updates → Save both. Then "semalam grab RM15" → date = yesterday, payment method unset → must tap one. Then "今天午餐 RM10 现金" → reply in Chinese.
 
@@ -126,7 +126,9 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M4 — Log by snapping a receipt
 
-> **Status (2026-09-24):** Built on branch `claude/keen-noether-reiw5l` after M3. Unit, pgTAP (`storage.test.sql`) and E2E (`m4-receipts.spec.ts`, D30 fake model with real uploads) all pass on the local stack. Still open: M4.11 needs Sky's 20 receipt photos and Vertex AI credentials. Before this reaches production: Sky's OK to `supabase db push` migration `0002_storage.sql`, the Vertex AI env vars in Vercel (M3.1), and D26. Receipts upload through a server-issued signed URL instead of the browser Supabase client (D31, proposed, awaiting Sky's OK).
+> **Status (2026-09-25):** Merged to `main` with M3 (PR #4), which deploys to production. Unit, pgTAP (`storage.test.sql`) and E2E (`m4-receipts.spec.ts`, D30 fake model with real uploads) all pass on the local stack. Migration `0002_storage.sql` was applied to the cloud project on 2026-09-25 with Sky's OK, via the Supabase MCP like 0001. The `receipts` bucket (private, JPEG, 2 MB) and its three `authenticated`-only policies were checked afterwards, and the security advisor reports nothing on Storage or RLS. Still open: M4.11 needs Sky's 20 receipt photos and Vertex AI credentials; the Vertex AI env vars and D26 are unconfirmed (see M3); D31 (receipts upload through a server-issued signed URL instead of the browser Supabase client) is proposed, awaiting Sky's OK.
+>
+> **Migration history:** the cloud project records migrations by timestamp (`20260922041552_init`, `20260925064632_storage`), while the repo files are `0001_init.sql` and `0002_storage.sql`. A CLI `supabase db push` would therefore report a mismatch; apply the next migration the same way (Supabase MCP `apply_migration`), or run `supabase migration repair` first to line the histories up.
 
 **Demo:** Chat → camera → photo of a 99 Speedmart receipt (RM 42.30) → card pre-filled with total, merchant, date → Split → RM 30.00 Groceries (Needs) + RM 12.30 Food & Drinks (Wants) → Save disabled until remainder = RM 0.00 → Save → History shows one expandable group with the photo. Then photo of a cat → "This doesn't look like a receipt". Then snap a receipt and Discard → object gone from Storage.
 
