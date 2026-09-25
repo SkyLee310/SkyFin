@@ -49,7 +49,7 @@ A task is done when `lint`, `typecheck` and `npm test` pass (plus `test:e2e` whe
 - **Gemini** is called only from Server Actions and the cron route, through `src/lib/ai/*`, with the model ID from `GEMINI_MODEL`. Call `consume_ai_call()` before every user-triggered call; handle output per TECH_SPEC §5.4.
 - **Accounting Agent** (`evaluatePace`) is pure arithmetic — no I/O, no Gemini — with a table test for each rule in PRD §8.1.
 - **Scheduled jobs** are date-based and idempotent: they write `audit_reports` rows with a `dedup_key`, and a unique violation means "already done".
-- **Schema changes** go in the next numbered file in `supabase/migrations/`; applied migrations stay as they are.
+- **Schema changes** go in the next numbered file in `supabase/migrations/`; applied migrations stay as they are. The cloud history records the same numbers (`0001`, `0002`, …), so `npx supabase db push` lines up. The Supabase MCP's `apply_migration` records a timestamp version instead: after using it, re-key that row in `supabase_migrations.schema_migrations` to the file's number.
 - **Receipts** live at `{user_id}/{uuid}.jpg` in the private `receipts` bucket; delete them through the Storage API, since a SQL delete leaves the file behind.
 - **UI**: chrome is English. AI replies use the language of the user's message, saved as `preferred_language` for scheduled warnings and audits; warning text comes from `src/lib/i18n/{en,zh,ms}.ts`. Tap targets ≥ 44 px, charts tap-to-show, safe-area insets respected, dark mode follows the system.
 - **Commits** start with the task ID (`M2.3: add saveTransactions`).
