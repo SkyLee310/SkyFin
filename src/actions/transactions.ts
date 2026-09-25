@@ -3,9 +3,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { senToNumeric } from "@/lib/money";
 import { RECEIPTS_BUCKET, isOwnReceiptPath } from "@/lib/receipts";
+import { checkAfterWrite } from "@/lib/agents/check";
+import type { Warning } from "@/lib/agents/accounting";
 import {
   SaveInput,
-  Draft,
+  UpdateTransactionInput,
+  IdInput,
+  ExcludeFromPaceInput,
   ActionResult,
 } from "@/lib/validation/schemas";
 import { randomUUID } from "crypto";
@@ -30,9 +34,16 @@ export interface TransactionRecord {
   updated_at: string;
 }
 
+const UNAUTHENTICATED = { ok: false, code: "UNAUTHENTICATED", message: "User not authenticated" } as const;
+
+// Every page reads these rows, and the layout's banner shows any warning the write raised.
+function revalidateAll() {
+  revalidatePath("/", "layout");
+}
+
 export async function saveTransactions(
   rawInput: SaveInput
-): Promise<ActionResult<{ ids: string[] }>> {
+): Promise<ActionResult<{ ids: string[]; warning?: Warning }>> {
   const parsed = SaveInput.safeParse(rawInput);
   if (!parsed.success) {
     return {
@@ -48,17 +59,16 @@ export async function saveTransactions(
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return { ok: false, code: "UNAUTHENTICATED", message: "User not authenticated" };
-  }
+  if (authError || !user) return UNAUTHENTICATED;
 
   const { drafts, receiptPath } = parsed.data;
   // Only the caller's own upload can go on a row (F1-2); the path is shared by every split row.
   if (receiptPath !== null && !isOwnReceiptPath(receiptPath, user.id)) {
     return { ok: false, code: "VALIDATION", message: "Invalid receipt path" };
   }
-  const isSplitGroup = drafts.length > 1 && !!receiptPath;
-  const receiptGroupId = isSplitGroup ? randomUUID() : null;
+  // Every receipt entry gets a group id, split or not, so History can still tell it was a
+  // receipt after the daily sweep clears receipt_url ("Image expired", FR-26).
+  const receiptGroupId = receiptPath ? randomUUID() : null;
 
   const rowsToInsert = drafts.map((d) => ({
     user_id: user.id,
@@ -78,7 +88,7 @@ export async function saveTransactions(
   const { data, error } = await supabase
     .from("transactions")
     .insert(rowsToInsert)
-    .select("id");
+    .select("id, type");
 
   if (error) {
     if (error.code === "23503") {
@@ -91,31 +101,37 @@ export async function saveTransactions(
     return { ok: false, code: "NOT_FOUND", message: error.message };
   }
 
-  const ids = (data as { id: string }[]).map((r) => r.id);
-  revalidatePath("/history");
-  revalidatePath("/");
-  return { ok: true, data: { ids } };
+  const rows = data as { id: string; type: string }[];
+  const warning = await checkAfterWrite(
+    supabase,
+    user.id,
+    rows.filter((r) => r.type === "expense").map((r) => r.id),
+  );
+  revalidateAll();
+  return { ok: true, data: { ids: rows.map((r) => r.id), ...(warning ? { warning } : {}) } };
 }
 
-export async function updateTransaction(params: {
-  id: string;
-  patch: Partial<Draft>;
-}): Promise<ActionResult<{ id: string }>> {
+export async function updateTransaction(
+  rawInput: UpdateTransactionInput
+): Promise<ActionResult<{ id: string; warning?: Warning }>> {
   const supabase = await createClient();
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return { ok: false, code: "UNAUTHENTICATED", message: "User not authenticated" };
+  if (authError || !user) return UNAUTHENTICATED;
+
+  const parsed = UpdateTransactionInput.safeParse(rawInput);
+  if (!parsed.success) {
+    return { ok: false, code: "VALIDATION", message: parsed.error.issues.map((i) => i.message).join(", ") };
   }
 
   const updateFields: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
 
-  const { patch } = params;
+  const { patch } = parsed.data;
   if (patch.amountSen !== undefined) updateFields.amount = senToNumeric(patch.amountSen);
   if (patch.categoryId !== undefined) updateFields.category_id = patch.categoryId;
   if (patch.type !== undefined) updateFields.type = patch.type;
@@ -131,37 +147,40 @@ export async function updateTransaction(params: {
   const { data, error } = await supabase
     .from("transactions")
     .update(updateFields)
-    .eq("id", params.id)
+    .eq("id", parsed.data.id)
     .eq("user_id", user.id)
-    .select("id")
+    .select("id, type")
     .single();
 
   if (error || !data) {
     return { ok: false, code: "NOT_FOUND", message: error?.message || "Transaction not found" };
   }
 
-  revalidatePath("/history");
-  revalidatePath("/");
-  return { ok: true, data: { id: (data as { id: string }).id } };
+  const row = data as { id: string; type: string };
+  // F8-3: an edit re-runs the check; an expense edited up to ≥ 20% of the budget is a spike.
+  const warning = await checkAfterWrite(supabase, user.id, row.type === "expense" ? [row.id] : []);
+  revalidateAll();
+  return { ok: true, data: { id: row.id, ...(warning ? { warning } : {}) } };
 }
 
-export async function deleteTransaction(params: {
-  id: string;
-}): Promise<ActionResult<{ id: string }>> {
+export async function deleteTransaction(
+  rawInput: IdInput
+): Promise<ActionResult<{ id: string; warning?: Warning }>> {
   const supabase = await createClient();
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return { ok: false, code: "UNAUTHENTICATED", message: "User not authenticated" };
-  }
+  if (authError || !user) return UNAUTHENTICATED;
+
+  const parsed = IdInput.safeParse(rawInput);
+  if (!parsed.success) return { ok: false, code: "VALIDATION", message: "Invalid transaction id" };
 
   const { data: deleted, error } = await supabase
     .from("transactions")
     .delete()
-    .eq("id", params.id)
+    .eq("id", parsed.data.id)
     .eq("user_id", user.id)
     .select("receipt_url")
     .maybeSingle();
@@ -183,7 +202,51 @@ export async function deleteTransaction(params: {
     }
   }
 
-  revalidatePath("/history");
-  revalidatePath("/");
-  return { ok: true, data: { id: params.id } };
+  const warning = await checkAfterWrite(supabase, user.id);
+  revalidateAll();
+  return { ok: true, data: { id: parsed.data.id, ...(warning ? { warning } : {}) } };
+}
+
+/**
+ * The D16 answer, from the spike banner or a History row: a one-off expense still counts toward
+ * the budget but leaves the pace average. Also settles any spike question about this expense.
+ */
+export async function setExcludeFromPace(
+  rawInput: ExcludeFromPaceInput
+): Promise<ActionResult<{ warning?: Warning }>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) return UNAUTHENTICATED;
+
+  const parsed = ExcludeFromPaceInput.safeParse(rawInput);
+  if (!parsed.success) return { ok: false, code: "VALIDATION", message: "Invalid input" };
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .update({ exclude_from_pace: parsed.data.value, updated_at: new Date().toISOString() })
+    .eq("id", parsed.data.id)
+    .eq("user_id", user.id)
+    .eq("type", "expense")
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    return { ok: false, code: "NOT_FOUND", message: error?.message || "Expense not found" };
+  }
+
+  await supabase
+    .from("audit_reports")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .eq("type", "budget_warning")
+    .eq("level", "spike")
+    .eq("content->>transaction_id", parsed.data.id)
+    .is("read_at", null);
+
+  const warning = await checkAfterWrite(supabase, user.id);
+  revalidateAll();
+  return { ok: true, data: warning ? { warning } : {} };
 }

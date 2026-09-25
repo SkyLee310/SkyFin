@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createServerClient } from "@supabase/ssr";
+import { todayMYT } from "../../../src/lib/dates";
 
 type SupabaseSession = ReturnType<typeof createCookieJarClient>["supabase"];
 
@@ -108,4 +109,57 @@ async function readSignInLink(email: string) {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   throw new Error(`No sign-in email for ${email} reached Mailpit.`);
+}
+
+type Session = Awaited<ReturnType<typeof createSignedInUser>>;
+
+// Inserts rows as the signed-in user (RLS applies), bypassing the app's accounting check, so a
+// test can arrange a month and then trigger the check on purpose. Amounts in sen.
+export async function insertRows(
+  user: Pick<Session, "supabase" | "userId">,
+  rows: {
+    amountSen: number;
+    category: string;
+    date?: string;
+    type?: "expense" | "income";
+    payment?: "Cash" | "eWallet" | "Card";
+    essential?: boolean;
+    merchant?: string | null;
+    itemLabel?: string | null;
+    receiptGroupId?: string | null;
+  }[],
+) {
+  const { data: categories, error } = await user.supabase.from("categories").select("id, name, kind");
+  if (error) throw error;
+  const idOf = (name: string, kind: string) => {
+    const found = categories!.find((c) => c.name === name && c.kind === kind);
+    if (!found) throw new Error(`No ${kind} category ${name}`);
+    return found.id as string;
+  };
+  const { error: insertError } = await user.supabase.from("transactions").insert(
+    rows.map((r) => ({
+      user_id: user.userId,
+      category_id: idOf(r.category, r.type ?? "expense"),
+      amount: (r.amountSen / 100).toFixed(2),
+      type: r.type ?? "expense",
+      payment_method: r.payment ?? "Cash",
+      is_essential: r.essential ?? true,
+      merchant: r.merchant ?? null,
+      item_label: r.itemLabel ?? null,
+      receipt_group_id: r.receiptGroupId ?? null,
+      // Always set: a bulk insert sends the union of the rows' keys, so leaving it out on one
+      // row would send null for it rather than the column default.
+      date: r.date ?? todayMYT(),
+    })),
+  );
+  if (insertError) throw insertError;
+}
+
+/** Calls the daily cron the way Vercel does, with the test-only ?date= and ?user= overrides. */
+export async function runCron(baseURL: string, params: { date?: string; user?: string } = {}, token = process.env.CRON_SECRET) {
+  const query = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
+  const response = await fetch(`${baseURL}/api/cron/daily?${query}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }

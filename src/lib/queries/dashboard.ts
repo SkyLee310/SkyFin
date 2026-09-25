@@ -1,101 +1,68 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { evaluatePace, type PaceResult } from "@/lib/agents/accounting";
 import { monthRangeMYT, todayMYT } from "@/lib/dates";
-import { toSen } from "@/lib/money";
+import { numericToSen } from "@/lib/money";
+import { cashFlow, summarizeExpenses, type CashFlow, type ExpenseSummary } from "@/lib/stats";
+import { createClient } from "@/lib/supabase/server";
+import { loadPeriodRows } from "./stats";
 
-export interface DashboardBudgetResult {
+export interface DashboardData {
+  /** "YYYY-MM", for links into History. */
+  month: string;
   budgetSen: number;
   spentSen: number;
   remainingSen: number;
+  /** D − d + 1: today counts. */
   daysRemaining: number;
+  daysInMonth: number;
+  pace: PaceResult;
+  cashFlow: CashFlow;
+  expenses: ExpenseSummary;
+  /** Last month's Wants share, the marker on the Needs vs Wants bar; null with no expenses. */
+  lastMonthWantsPct: number | null;
 }
 
-export interface NetCashFlowResult {
-  incomeSen: number;
-  expenseSen: number;
-  netSen: number;
+function previousMonthStart(monthStart: string): string {
+  const [year, month] = monthStart.split("-").map(Number);
+  return month === 1 ? `${year! - 1}-12-01` : `${year}-${String(month! - 1).padStart(2, "0")}-01`;
 }
 
-export async function getDashboardBudget(): Promise<DashboardBudgetResult> {
+/** Everything the Dashboard shows for the current MYT month (PRD §9), from one set of rows. */
+export async function getDashboard(): Promise<DashboardData> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  if (!user) {
-    return { budgetSen: 0, spentSen: 0, remainingSen: 0, daysRemaining: 0 };
-  }
-
-  // 1. Fetch user budget
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("monthly_budget")
-    .eq("id", user.id)
-    .single();
-
-  const budgetSen = profile?.monthly_budget ? toSen(profile.monthly_budget) : 0;
-
-  // 2. Fetch current month expenses
-  const range = monthRangeMYT();
-  const { data: txs } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("user_id", user.id)
-    .eq("type", "expense")
-    .gte("date", range.start)
-    .lte("date", range.end);
-
-  const spentSen = (txs || []).reduce((sum, r) => sum + toSen(r.amount), 0);
-  const remainingSen = Math.max(0, budgetSen - spentSen);
-
-  // 3. Days remaining in current MYT month
   const today = todayMYT();
-  const todayDay = parseInt(today.slice(8, 10), 10);
-  const endDay = parseInt(range.end.slice(8, 10), 10);
-  const daysRemaining = Math.max(0, endDay - todayDay + 1);
+  const range = monthRangeMYT(today);
+  const last = monthRangeMYT(previousMonthStart(range.start));
+
+  const [{ data: profile }, rows, lastRows] = await Promise.all([
+    supabase.from("profiles").select("monthly_budget").eq("id", user.id).single(),
+    loadPeriodRows(supabase, user.id, range.start, range.end),
+    loadPeriodRows(supabase, user.id, last.start, last.end),
+  ]);
+
+  const budgetSen = profile ? numericToSen(profile.monthly_budget) : 0;
+  const expenses = summarizeExpenses(rows);
+  const spentExcludedSen = rows
+    .filter((r) => r.type === "expense" && r.exclude_from_pace)
+    .reduce((sum, r) => sum + numericToSen(r.amount), 0);
 
   return {
+    month: today.slice(0, 7),
     budgetSen,
-    spentSen,
-    remainingSen,
-    daysRemaining,
-  };
-}
-
-export async function getNetCashFlow(): Promise<NetCashFlowResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { incomeSen: 0, expenseSen: 0, netSen: 0 };
-  }
-
-  const range = monthRangeMYT();
-  const { data: txs } = await supabase
-    .from("transactions")
-    .select("amount, type")
-    .eq("user_id", user.id)
-    .gte("date", range.start)
-    .lte("date", range.end);
-
-  let incomeSen = 0;
-  let expenseSen = 0;
-
-  for (const t of txs || []) {
-    const sen = toSen(t.amount);
-    if (t.type === "income") {
-      incomeSen += sen;
-    } else {
-      expenseSen += sen;
-    }
-  }
-
-  return {
-    incomeSen,
-    expenseSen,
-    netSen: incomeSen - expenseSen,
+    spentSen: expenses.totalSen,
+    remainingSen: Math.max(0, budgetSen - expenses.totalSen),
+    daysRemaining: range.daysInMonth - range.day + 1,
+    daysInMonth: range.daysInMonth,
+    pace: evaluatePace({ budgetSen, spentSen: expenses.totalSen, spentExcludedSen, today }),
+    cashFlow: cashFlow(rows),
+    expenses,
+    lastMonthWantsPct: summarizeExpenses(lastRows).wantsPct,
   };
 }

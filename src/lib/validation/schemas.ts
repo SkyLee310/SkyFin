@@ -78,6 +78,23 @@ export const ReceiptPathInput = z.object({
 });
 export type ReceiptPathInput = z.infer<typeof ReceiptPathInput>;
 
+// An edit from History: any Draft fields; the action maps them onto the row.
+export const UpdateTransactionInput = z.object({
+  id: z.string().uuid(),
+  patch: Draft.omit({ clientId: true, confidence: true, currencyWarning: true }).partial(),
+});
+export type UpdateTransactionInput = z.infer<typeof UpdateTransactionInput>;
+
+export const IdInput = z.object({ id: z.string().uuid() });
+export type IdInput = z.infer<typeof IdInput>;
+
+// "Is this a one-off purchase?" (D16): one-off expenses leave the pace average.
+export const ExcludeFromPaceInput = z.object({ id: z.string().uuid(), value: z.boolean() });
+export type ExcludeFromPaceInput = z.infer<typeof ExcludeFromPaceInput>;
+
+export const DismissWarningsInput = z.object({ ids: z.array(z.string().uuid()).min(1).max(50) });
+export type DismissWarningsInput = z.infer<typeof DismissWarningsInput>;
+
 export type ActionErrorCode =
   | "UNAUTHENTICATED"
   | "VALIDATION"

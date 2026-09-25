@@ -4,7 +4,7 @@
 |---|---|
 | Owner | Sky |
 | Status | Approved for build (all open questions resolved) |
-| Last updated | 2026-09-21 |
+| Last updated | 2026-09-25 |
 | Related | [TECH_SPEC.md](./TECH_SPEC.md) · [TASKS.md](./TASKS.md) |
 
 SkyFin is a personal iPhone PWA that puts cash, eWallet and card spending in one place, logs an expense from one chat line or one receipt photo, and warns before the monthly budget runs out. Everything is in RM.
@@ -153,7 +153,7 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 - [ ] With S = 0 the projection reads "On track".
 
 **F10 Accounting Agent, in-app warnings**
-- [ ] Budget RM 800, RM 400 spent by day 10 of a 30-day month → `warning` with out-of-cash day 20.
+- [ ] Budget RM 800, RM 400 spent by day 10 of a 30-day month → `critical` (pace 1.50 ≥ 1.30, D32) with out-of-cash day 20.
 - [ ] A level fires at most once per day; each threshold crossing (50 / 80 / 100%) fires once per month.
 - [ ] No pace warning on days 1–2 while spend < 30% of budget.
 - [ ] A single expense ≥ 20% of budget fires `spike` and asks "Is this a one-off purchase?"; Yes removes it from the pace average (D16).
@@ -237,6 +237,13 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D28 | Function region | Vercel functions in `sin1` (Singapore), next to Supabase |
 | D30 | Fake AI in E2E | With `AI_FAKE=1` outside production, the AI parsers use canned model output (`src/lib/ai/fake.ts`) so E2E runs without Gemini; accuracy is measured by `test:ai-eval` |
 | D31 | Receipt upload | Server picks `{uid}/{uuid}.jpg` and returns a signed upload URL; the browser uploads straight to Storage, with no browser Supabase client |
+| D32 | Warning levels in practice | Every rule that fires is stored (each with its own dedup key); the banner and the push show the most severe (spike > critical > warning > info). F10-1's example is `critical`, since its pace is 1.50 |
+| D33 | Push and cron in tests | `PUSH_FAKE=1` outside production posts pushes as plain JSON to the endpoint; the cron takes `?date=` and `?user=` only when `VERCEL_ENV` isn't `production` |
+| D34 | Audit figures | The agent pre-computes saving options (with RM savings); the model picks one per tip and writes words only; any RM amount in its text must be a pre-computed figure, else the stats-only text is used |
+| D35 | Cron back-fill | A missed weekly or monthly audit runs up to 2 days late; last month's suggested budget is applied by the 3rd at the latest |
+| D36 | Receipt group id | Every receipt entry gets a `receipt_group_id`, split or not, so History can show "Image expired" after the sweep |
+| D37 | Service worker build | `@serwist/turbopack` (Next 16 builds with Turbopack), served at `/serwist/sw.js` with scope `/`; caches static assets only, never pages or data |
+| D38 | Audit tab badge | Counts unread weekly and monthly reports; budget warnings are read and dismissed in the banner |
 
 ---
 
@@ -333,10 +340,10 @@ Rules:
 Content:
 - One-sentence headline verdict.
 - Needs vs Wants totals; top 3 categories with RM and %.
-- Micro-expenses: any `coalesce(merchant, item_label)` with ≥ 3 expenses in the window, each ≤ RM 15, with count, total and monthly projection (e.g. boba 4× = RM34, ≈ RM146/month).
-- Exactly 3 tips, each with an estimated monthly saving in RM.
+- Micro-expenses: any `coalesce(merchant, item_label)` with ≥ 3 expenses in the window, each ≤ RM 15 (larger buys under the same name aren't counted), with count, total and monthly projection = total × 30 ÷ days in the window (e.g. boba 4× = RM34, ≈ RM146/month).
+- Exactly 3 tips, each with an estimated monthly saving in RM. The savings are computed before the model runs (half a micro-expense, 30% of a Wants category, 10% of a top category, a no-spend day at 5% of spend, pausing before paying at 3%); the model picks which one each tip is about (D34).
 - Change vs previous period (total and Wants %).
-- Monthly report only: `suggested_budget`, auto-applied on the 1st with a push "Your budget for {month} is RM X — tap to change" and a one-tap restore.
+- Monthly report only: `suggested_budget` = Needs + 90% of Wants for the month, rounded up to RM 10 and kept within 80–120% of the current budget; auto-applied on the 1st with a push "Your budget for {month} is RM X — tap to change" and a one-tap restore.
 
 All numbers are computed before the model is called; the model writes words, not figures. **Persona:** a friendly senior who has been a broke student in Malaysia; tips are concrete and local (mamak vs café, campus bus, student data plans), never shaming; written in `preferred_language`.
 

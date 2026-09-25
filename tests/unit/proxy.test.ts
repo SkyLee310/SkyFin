@@ -20,6 +20,7 @@ describe("proxy matcher", () => {
     "/manifest.webmanifest",
     "/icons/icon-192.png",
     "/icons/apple-touch-icon.png",
+    "/serwist/sw.js",
   ])("skips %s", (url) => {
     expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
   });

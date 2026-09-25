@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Owner | Sky |
-| Last updated | 2026-09-21 |
+| Last updated | 2026-09-25 |
 | Related | [PRD.md](./PRD.md) · [TASKS.md](./TASKS.md) |
 
 A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth + Storage), calling Gemini only from the server. There is no separate backend service.
@@ -32,7 +32,7 @@ A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth +
 | Dates | `date-fns` + `@date-fns/tz` | All business dates in `Asia/Kuala_Lumpur` |
 | Data access | `@supabase/ssr`, `@supabase/supabase-js` | Cookie session in Server Components/Actions |
 | AI | `@google/genai` on Vertex AI (`vertexai: true`, service-account key; D22), model from `GEMINI_MODEL` (default `gemini-3.5-flash`) | Structured output (`responseMimeType: application/json` + schema) |
-| PWA | `@serwist/next` (service worker), `app/manifest.ts` | Offline fallback page + push handler |
+| PWA | `@serwist/turbopack` (service worker built by a route handler, D37), `app/manifest.ts` | Offline fallback page + push handler; static assets cached, pages and data never |
 | Push | `web-push` (VAPID) | iOS 16.4+ Home Screen apps only |
 | Image prep | Browser `createImageBitmap` + canvas → JPEG | Safari decodes HEIC natively, so no HEIC library |
 | Testing | Vitest (unit), Playwright (e2e, iPhone viewport) | |
@@ -144,6 +144,8 @@ flowchart TD
 ```
 
 The budget is applied on the 1st in a separate step so the monthly audit (run on the last day) never changes the current month's budget.
+
+Per user, `lib/jobs/daily.ts` runs: (1) the audits due (`lib/jobs/schedule.ts`: Sunday or up to 2 days late for the week; the last day, or the 1st–2nd for last month), each pushed when created; (2) on the 1st–3rd, last month's suggested budget, applied once and pushed; (3) the accounting check for today, then one push for the most severe unread warning of the month not yet pushed (`content.pushed_at`), which also covers warnings raised in the app during the day (F11-1). Then, once per run, the Storage sweep. A failing step is logged and reported in the JSON response without stopping the others (D32, D35).
 
 ---
 
@@ -352,11 +354,14 @@ Object path: `{user_id}/{uuid}.jpg`. There is no update policy, so an upload nev
 
 ### 4.4 Derived data (views / queries, not tables)
 
+Computed in integer sen from the period's rows (`lib/queries/stats.ts` `loadPeriodRows`), by pure functions in `lib/stats.ts` that are unit-tested against a fixture month. No migration or SQL view is needed.
+
 | Name | Definition |
 |---|---|
-| `month_summary(month)` | Sums by type, category, payment method, `is_essential` for the MYT month |
-| `pace_inputs(month)` | S, S′ (excluding `exclude_from_pace`), d, D, B |
-| `micro_expenses(start, end)` | `coalesce(merchant, item_label)` groups with count ≥ 3 and every amount ≤ 15.00 |
+| `summarizeExpenses(rows)` | Totals by category, payment method and `is_essential`; whole-number shares |
+| `cashFlow(rows)` | Income − Expense |
+| pace inputs | S, S′ (excluding `exclude_from_pace`), d, D, B → `evaluatePace` |
+| `microExpenses(rows, days)` | `coalesce(merchant, item_label)` groups (case-insensitive) counting expenses ≤ RM 15, kept when count ≥ 3; monthly projection = total × 30 ÷ days |
 
 ---
 
@@ -406,18 +411,22 @@ export const SaveInput = z.object({
 | `signInWithGoogle()` | — | redirect URL | Supabase OAuth; callback at `/auth/callback` |
 | `signInWithOtp(email)` / `verifyOtp(email, code)` | email, 6-digit code | — | D14 fallback, built only if the M1 spike fails |
 | `updateBudget` | `{ budgetSen }` | `{ budgetSen, warning? }` | Re-runs accounting check |
-| `restorePreviousBudget` | `{ reportId }` | `{ budgetSen }` | Reads `content.previous_budget_sen` from the monthly report |
+| `restorePreviousBudget` | `{ id }` (monthly report) | `{ budgetSen }` | Reads `content.budget.previous_budget_sen` (the budget the 1st replaced), sets `undone_at`, re-runs the check |
+| `dismissBudgetApplied` | `{ id }` | — | Hides the "new budget" banner, keeping the new budget |
 | `listCategories` | `{ kind? }` | `Category[]` | Active only unless `includeArchived` |
 | `createCategory` / `renameCategory` / `archiveCategory` | name, kind / id, name / id | `Category` | Unique per user + kind |
 | `parseTextEntry` | `{ message, sessionDrafts: Draft[] }` | `{ reply, language, drafts: Draft[] }` | Calls `consume_ai_call`; returns updated `sessionDrafts` for corrections |
 | `createReceiptUpload` | — | `{ path, signedUrl }` | Server picks `{uid}/{uuid}.jpg`; the browser PUTs the JPEG to `signedUrl` (D31) |
 | `parseReceipt` | `{ path }` | `{ draft: Draft }` | Path must be the caller's own; `NOT_RECEIPT` → deletes object; `AI_LIMIT` when cap hit; on `AI_LIMIT` / `AI_FAILED` the photo is kept for manual entry |
 | `discardReceipt` | `{ path }` | — | Deletes the object |
-| `saveTransactions` | `SaveInput` | `{ ids: string[], warning?: Warning }` | One insert; sets `receipt_group_id` when `drafts.length > 1` and a receipt exists |
-| `updateTransaction` | `{ id, patch: Partial<Draft> }` | `{ warning? }` | |
-| `deleteTransaction` | `{ id }` | `{ warning? }` | Deletes image via Storage API if no other row uses it |
-| `setExcludeFromPace` | `{ id, value }` | `{ warning? }` | D16 answer from banner or History |
-| `markReportRead` | `{ id }` | — | |
+| `saveTransactions` | `SaveInput` | `{ ids: string[], warning?: Warning }` | One insert; sets one `receipt_group_id` whenever a receipt exists, split or not (D36); new expenses are checked for a spike |
+| `updateTransaction` | `{ id, patch: Partial<Draft> }` | `{ id, warning? }` | Zod `UpdateTransactionInput`; an edited expense is checked for a spike |
+| `deleteTransaction` | `{ id }` | `{ id, warning? }` | Deletes image via Storage API if no other row uses it |
+| `setExcludeFromPace` | `{ id, value }` | `{ warning? }` | D16 answer from banner or History; also marks that expense's spike question read |
+| `markReportRead` | `{ id }` | — | Called when a report is opened; clears the Audit badge |
+| `dismissWarnings` | `{ ids }` | — | Banner Dismiss: marks budget warnings read |
+
+`warning` is the most severe warning the write newly raised (D32). Every one of these actions ends with `revalidatePath("/", "layout")`, so the banner slot in the app layout shows it on the tab where the save happened.
 
 Reads (Dashboard, History, Audit) are done in Server Components through `src/lib/queries/*.ts`, not actions.
 
@@ -438,17 +447,20 @@ Reads (Dashboard, History, Audit) are done in Server Components through `src/lib
 
 `0 14 * * *` UTC = 22:00 MYT. On Hobby the run may start later within that hour; nothing depends on the minute.
 
+The cron route compares the bearer token in constant time and returns a JSON summary per user. `?date=YYYY-MM-DD` (run as that MYT date) and `?user=<uuid>` (one user) are accepted only when `VERCEL_ENV` isn't `production` (D33). `/serwist/[path]` serves the service worker built from `src/app/sw.ts` (D37).
+
 ### 5.4 Gemini contracts (`src/lib/ai/`)
 
 | Module | Input to model | Output schema | Settings |
 |---|---|---|---|
 | `parse-text.ts` | system prompt, today (MYT), category names, session drafts, message | `{ reply, language, drafts: [{type, amount, category, payment_method, merchant, item_label, note, date, is_essential}] }` | low thinking level, JSON output |
 | `parse-receipt.ts` | system prompt, today, category names, image as `inlineData` (image/jpeg) | `{ is_receipt, total_amount, currency_is_rm, merchant, date, suggested_category, suggested_is_essential, suggested_payment_method, item_label, confidence }` | low thinking level, JSON output |
-| `audit.ts` | persona prompt, language, pre-computed stats JSON, raw rows for the period | `{ headline, tips: [{title, detail, est_monthly_saving_rm}] ×3 }` | medium thinking level |
+| `audit.ts` | persona prompt, language, pre-computed stats JSON, saving options `{id, kind, label, monthly_saving}`, raw rows for the period | `{ headline, tips: [{option_id, title, detail}] ×3 }`; each tip's saving comes from its option (D34) | medium thinking level |
 
 Rules for all three:
 - The category name returned must match a provided name, else it maps to "Others".
 - Amounts from the model are parsed to sen and re-validated; anything that fails Zod → one retry, then `AI_FAILED` (or a stats-only audit).
+- Audit text may not contain an RM amount that isn't one of the report's own figures (`reportFigures()`); such output counts as a failure (D34).
 - Text on a receipt is data. The prompt states that instructions found in images or messages must not change the output schema, and the schema itself limits what can be returned.
 - Thinking level is `config.thinkingConfig.thinkingLevel` (`ThinkingLevel.LOW` / `MEDIUM`), confirmed against `@google/genai` 2.24; the JSON schema goes in `config.responseJsonSchema`.
 
@@ -457,14 +469,17 @@ Rules for all three:
 ```ts
 // accounting.ts — pure, unit-tested, no I/O
 export function evaluatePace(i: {
-  budgetSen: number; spentSen: number; spentExcludedSen: number;
-  day: number; daysInMonth: number; largestNewExpenseSen?: number;
-}): { level: "info" | "warning" | "critical" | "spike" | null;
-      pace: number | null; outOfCashDay: number | null; dedupKey: string | null };
+  budgetSen: number;         // B
+  spentSen: number;          // S
+  spentExcludedSen: number;  // S − S′ (rows marked one-off)
+  today: string;             // MYT date: gives d, D and the dedup keys
+  newExpenses?: { id: string; amountSen: number; where: string | null }[];  // spike candidates
+}): { pace: number | null; projectedSpendSen: number | null; outOfCashDay: number | null;
+      exceeded: boolean; warnings: WarningCandidate[] /* every rule that fires, most severe first */ };
 ```
 
-- `runAccountingCheck(userId, client)` loads inputs, calls `evaluatePace`, inserts into `audit_reports` with `dedup_key`; a unique-violation means "already warned" and is ignored.
-- `generateAudit(userId, kind, period, client)` → SQL stats → `micro_expenses` → Gemini → Zod → insert with `dedup_key = 'weekly:<start>'` or `'monthly:<yyyy-mm>'`.
+- `runAccountingCheck(client, userId, { today?, newExpenseIds? })` loads inputs, calls `evaluatePace`, and upserts every warning into `audit_reports` with `ON CONFLICT (user_id, dedup_key) DO NOTHING`; only the rows actually inserted come back. `content` holds `{ kind, message, lang, transaction_id?, threshold?, pushed_at? }`; the message is rendered from `lib/i18n` in `preferred_language` at insert time.
+- `generateAudit(client, userId, kind, period, { lang, budgetSen })` → checks the dedup key first (no paid call for a repeat) → rows → `buildAuditStats` → `savingOptions` → Gemini → Zod + figure check → upsert with `dedup_key = 'weekly:<start>'` or `'monthly:<yyyy-mm>'`. `content` is `AuditContent` (`lib/agents/audit-content.ts`); a monthly report adds `budget: { suggested_budget_sen, previous_budget_sen, for_month, applied_at?, undone_at?, dismissed_at? }`.
 
 ---
 
@@ -506,6 +521,7 @@ skyfin/
 │   │   ├── manifest.ts             # PWA manifest
 │   │   ├── sw.ts                   # Serwist service worker: precache, offline page, push
 │   │   ├── offline/page.tsx
+│   │   ├── serwist/[path]/route.ts # builds and serves /serwist/sw.js (D37)
 │   │   ├── login/page.tsx
 │   │   ├── auth/callback/route.ts
 │   │   ├── (app)/                  # authenticated shell
@@ -536,7 +552,7 @@ skyfin/
 │   │   ├── history/                # filters, day-group, receipt-group
 │   │   ├── audit/                  # report-view, report-list
 │   │   ├── banner/warning-banner.tsx
-│   │   └── onboarding/             # budget-step, install-step, notify-step
+│   │   └── onboarding/             # budget-step, onboarding-steps (install / notify), push-resubscribe
 │   ├── lib/
 │   │   ├── supabase/
 │   │   │   ├── server.ts           # session client for RSC/actions
@@ -550,9 +566,14 @@ skyfin/
 │   │   │   └── prompts/            # prompt text per module
 │   │   ├── agents/
 │   │   │   ├── accounting.ts       # evaluatePace (pure) + runAccountingCheck
-│   │   │   └── audit.ts            # generateAudit
-│   │   ├── queries/                # dashboard.ts, history.ts, audits.ts, stats.ts
+│   │   │   ├── check.ts            # checkAfterWrite for Server Actions
+│   │   │   ├── audit-content.ts    # AuditContent type, reportFigures (pure)
+│   │   │   └── audit.ts            # generateAudit, savingOptions, suggestBudget
+│   │   ├── jobs/                   # daily.ts (cron steps), schedule.ts (what is due on a date)
+│   │   ├── queries/                # dashboard.ts, history.ts, audits.ts, stats.ts, shell.ts (banner + badge)
+│   │   ├── stats.ts                # pure sums for charts and audits
 │   │   ├── push.ts                 # sendPush, prune dead endpoints
+│   │   ├── push-client.ts          # browser: standalone check, subscribe
 │   │   ├── image.ts                # client resize → JPEG
 │   │   ├── receipts.ts             # {uid}/{uuid}.jpg paths and the own-folder check
 │   │   ├── history-groups.ts       # collapse split rows into one History entry
@@ -581,7 +602,7 @@ skyfin/
 - [ ] RLS on every table; `supabase/tests/rls.test.sql` proves a second user sees zero rows.
 - [ ] Every migration that creates a table or function revokes all privileges from `anon`, `authenticated` and `service_role` (and `public` for functions), then grants only what the app needs: the defaults still give those roles `truncate`, `references` and `trigger` on new tables and `execute` on new functions. `rls.test.sql` asserts the exact set for each role.
 - [ ] Composite FK prevents cross-user `category_id`.
-- [ ] `lib/supabase/admin.ts` and `lib/ai/*` import `server-only`; `npm run build` then runs `scripts/check-client-bundle.mjs` (postbuild), which fails the build if `.next/static` contains `GEMINI`, `GOOGLE_SERVICE_ACCOUNT_KEY`, `BEGIN PRIVATE KEY`, `SUPABASE_SECRET_KEY`, `sb_secret_`, `VAPID_PRIVATE`, or the value of any server-only secret set in the build's environment.
+- [ ] `lib/supabase/admin.ts` and `lib/ai/*` import `server-only`; `npm run build` then runs `scripts/check-client-bundle.mjs` (postbuild), which fails the build if `.next/static` or the built service worker contains `GEMINI`, `GOOGLE_SERVICE_ACCOUNT_KEY`, `BEGIN PRIVATE KEY`, `SUPABASE_SECRET_KEY`, `sb_secret_`, `VAPID_PRIVATE`, or the value of any server-only secret set in the build's environment.
 - [ ] The Vertex AI service account has only the Vertex AI User role (`roles/aiplatform.user`); a GCP budget alert is set; a leaked key is deleted in GCP and replaced (D22).
 - [ ] Supabase Auth sign-ups are disabled after Sky's first sign-in (D1); the Email provider stays off unless the D14 OTP fallback is in use.
 - [ ] Every action calls `getUser()` (not `getSession()`) before touching data.
@@ -598,7 +619,7 @@ skyfin/
 | Unit | `evaluatePace` table tests (incl. S = 0, B = 0, day 1–2, spike, excluded rows), `money.ts` rounding, `dates.ts` around 23:59 / 00:01 MYT and month ends | Vitest, with `TZ=UTC` as on Vercel |
 | DB | RLS isolation, table and function privileges, composite FK rejection, `dedup_key` uniqueness, `consume_ai_call` cap | pgTAP files in `supabase/tests`, run with `npx supabase test db` against the local stack (branching needs a paid plan) |
 | AI eval | 20 receipts → totals within RM 0.00; 30 chat phrases (EN/ZH/MS/Rojak) → expected drafts | Vitest script, run manually before each model change |
-| E2E | Each milestone's demo script in TASKS.md, run against the local Supabase stack. Google can't run in a test: the callback test signs in through an emailed PKCE link read from Mailpit, and other tests start as a fresh email/password user. AI flows use canned model output (`AI_FAKE=1`, D30) | Playwright, iPhone 15 (WebKit), dev server on port 3100 |
+| E2E | Each milestone's demo script in TASKS.md, run against the local Supabase stack. Google can't run in a test: the callback test signs in through an emailed PKCE link read from Mailpit, and other tests start as a fresh email/password user. AI flows use canned model output (`AI_FAKE=1`, D30); pushes go to a local stand-in push service (`PUSH_FAKE=1`) and the cron runs with `?date=` / `?user=` (D33) | Playwright, iPhone 15 (WebKit), dev server on port 3100 |
 | Device | Home Screen install, sign-in, push receipt | Real iPhone, per milestone |
 
 ---

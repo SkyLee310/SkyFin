@@ -1,17 +1,18 @@
 import React from "react";
-import { getDashboardBudget, getNetCashFlow } from "@/lib/queries/dashboard";
+import { getDashboard } from "@/lib/queries/dashboard";
 import { BudgetCard } from "@/components/dashboard/budget-card";
 import { NetFlowCard } from "@/components/dashboard/net-flow-card";
+import { CategoryDonut } from "@/components/dashboard/category-donut";
+import { PaymentBar } from "@/components/dashboard/payment-bar";
+import { NeedsWantsBar } from "@/components/dashboard/needs-wants-bar";
+import { OnboardingSteps } from "@/components/onboarding/onboarding-steps";
 import Link from "next/link";
 import { Plus, ArrowRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [budgetData, netFlowData] = await Promise.all([
-    getDashboardBudget(),
-    getNetCashFlow(),
-  ]);
+  const data = await getDashboard();
 
   return (
     <div className="flex flex-col gap-5 p-4 pt-safe">
@@ -33,20 +34,39 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
+      {/* First run: Add to Home Screen, then notifications (F15), once the budget is set. */}
+      {data.budgetSen > 0 && <OnboardingSteps />}
+
       {/* 1. Monthly Budget Card */}
       <BudgetCard
-        budgetSen={budgetData.budgetSen}
-        spentSen={budgetData.spentSen}
-        remainingSen={budgetData.remainingSen}
-        daysRemaining={budgetData.daysRemaining}
+        budgetSen={data.budgetSen}
+        spentSen={data.spentSen}
+        remainingSen={data.remainingSen}
+        daysRemaining={data.daysRemaining}
+        month={data.month}
+        outOfCashDay={data.pace.outOfCashDay}
+        exceeded={data.pace.exceeded}
       />
 
       {/* 2. Net Cash Flow Card */}
       <NetFlowCard
-        incomeSen={netFlowData.incomeSen}
-        expenseSen={netFlowData.expenseSen}
-        netSen={netFlowData.netSen}
+        incomeSen={data.cashFlow.incomeSen}
+        expenseSen={data.cashFlow.expenseSen}
+        netSen={data.cashFlow.netSen}
       />
+
+      {/* 3–5. Breakdowns; every figure is summed in sen from this month's rows (F9-1). */}
+      <CategoryDonut categories={data.expenses.byCategory} totalSen={data.expenses.totalSen} month={data.month} />
+      {data.expenses.totalSen > 0 && (
+        <>
+          <PaymentBar payments={data.expenses.byPayment} />
+          <NeedsWantsBar
+            needsSen={data.expenses.needsSen}
+            wantsSen={data.expenses.wantsSen}
+            lastMonthWantsPct={data.lastMonthWantsPct}
+          />
+        </>
+      )}
 
       {/* Quick Access to History */}
       <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between">

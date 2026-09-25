@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { formatRM, toSen } from "@/lib/money";
 import type { Category } from "@/actions/categories";
-import { deleteTransaction } from "@/actions/transactions";
+import { deleteTransaction, setExcludeFromPace } from "@/actions/transactions";
 import type { DayGroup, HistoryItem } from "@/lib/queries/history";
 import type { PaymentMethod } from "@/lib/validation/schemas";
 import { ConfirmationCard } from "@/components/confirmation-card/confirmation-card";
-import { Trash2, AlertCircle, Clock, ChevronDown, Receipt } from "lucide-react";
+import { Trash2, AlertCircle, Clock, ChevronDown, Receipt, Zap, ImageOff } from "lucide-react";
 import { groupReceiptRows } from "@/lib/history-groups";
 
 interface HistoryViewProps {
@@ -22,7 +22,19 @@ interface HistoryViewProps {
   receiptUrls: Record<string, string>;
 }
 
-function ReceiptThumb({ url }: { url?: string }) {
+/** The receipt photo; `expired` once the daily sweep has deleted it (FR-26, D17). */
+function ReceiptThumb({ url, expired = false }: { url?: string; expired?: boolean }) {
+  if (expired) {
+    return (
+      <span
+        data-testid="image-expired"
+        className="w-10 h-10 flex-shrink-0 flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-slate-400"
+      >
+        <ImageOff className="w-3.5 h-3.5" aria-hidden />
+        <span className="text-[7px] leading-tight font-semibold text-center">Image expired</span>
+      </span>
+    );
+  }
   return (
     <span className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg overflow-hidden border border-slate-200 bg-slate-100 text-slate-400">
       {url ? (
@@ -98,6 +110,15 @@ export function HistoryView({
     }
   };
 
+  // "One-off purchase" (FR-25, D16): leaves the pace average; the server re-runs the check.
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const toggleOneOff = async (tx: HistoryItem) => {
+    setTogglingId(tx.id);
+    const res = await setExcludeFromPace({ id: tx.id, value: !tx.exclude_from_pace });
+    setTogglingId(null);
+    if (res.ok) router.refresh();
+  };
+
   const handleEditClick = (item: HistoryItem) => {
     setEditItem(item);
     setIsEditOpen(true);
@@ -121,9 +142,12 @@ export function HistoryView({
         data-testid="history-row"
         className="flex items-center justify-between p-3.5 hover:bg-slate-50/80 transition-colors"
       >
-        {!nested && tx.receipt_url && (
+        {!nested && (tx.receipt_url || tx.receipt_group_id) && (
           <span className="mr-3">
-            <ReceiptThumb url={receiptUrls[tx.receipt_url]} />
+            <ReceiptThumb
+              url={tx.receipt_url ? receiptUrls[tx.receipt_url] : undefined}
+              expired={!tx.receipt_url}
+            />
           </span>
         )}
         {/* Tap row to edit */}
@@ -160,6 +184,14 @@ export function HistoryView({
                 {tx.is_essential ? "Needs" : "Wants"}
               </span>
             )}
+            {!isIncome && tx.exclude_from_pace && (
+              <span
+                data-testid="one-off-badge"
+                className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-violet-50 text-violet-700"
+              >
+                One-off
+              </span>
+            )}
           </div>
         </div>
 
@@ -174,6 +206,23 @@ export function HistoryView({
             {formatRM(toSen(tx.amount))}
           </span>
 
+          {!isIncome && (
+            <button
+              type="button"
+              onClick={() => void toggleOneOff(tx)}
+              disabled={togglingId === tx.id}
+              aria-pressed={tx.exclude_from_pace}
+              aria-label={tx.exclude_from_pace ? "Count in pace again" : "Mark as one-off purchase"}
+              title="One-off purchase"
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 ${
+                tx.exclude_from_pace
+                  ? "text-violet-600 bg-violet-50"
+                  : "text-slate-300 hover:text-violet-600 hover:bg-violet-50"
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setDeleteTargetId(tx.id)}
@@ -318,7 +367,10 @@ export function HistoryView({
                           onClick={() => toggleGroup(entry.groupId)}
                           className="w-full min-h-[56px] flex items-center gap-3 p-3.5 text-left hover:bg-slate-50/80 transition-colors"
                         >
-                          <ReceiptThumb url={entry.receiptUrl ? receiptUrls[entry.receiptUrl] : undefined} />
+                          <ReceiptThumb
+                            url={entry.receiptUrl ? receiptUrls[entry.receiptUrl] : undefined}
+                            expired={!entry.receiptUrl}
+                          />
                           <span className="flex-1 flex flex-col min-w-0">
                             <span className="font-semibold text-sm text-slate-900 line-clamp-1">
                               {entry.merchant || "Receipt"}
