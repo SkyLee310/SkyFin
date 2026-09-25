@@ -104,8 +104,9 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 **Demo:** Chat: "Makan nasi lemak RM8.50 pakai eWallet" → card pre-filled (RM 8.50, Food & Drinks, eWallet, Needs) → Save. Then "nasi lemak 8.50, boba 12" → two stacked drafts, boba = Wants → "actually boba RM13" → draft updates → Save both. Then "semalam grab RM15" → date = yesterday, payment method unset → must tap one. Then "今天午餐 RM10 现金" → reply in Chinese.
 
 **Server**
-- [ ] M3.1 `lib/ai/client.ts` (`server-only`; Vertex AI via `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `GOOGLE_SERVICE_ACCOUNT_KEY`; `GEMINI_MODEL`). First confirm the model ID answers in that location (D22).
+- [x] M3.1 `lib/ai/client.ts` (`server-only`; Vertex AI via `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `GOOGLE_SERVICE_ACCOUNT_KEY`; `GEMINI_MODEL`). First confirm the model ID answers in that location (D22).
   - **Progress (2026-09-24):** `src/lib/ai/client.ts` and `scripts/check-gemini.mjs` are in. Open until `npm run check:gemini` passes with the real key in `.env.local`.
+  - **Done (2026-09-25):** production answered "Couldn't read that" because Vercel had only the old `GEMINI_API_KEY`. Sky added `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION=global`, `GOOGLE_SERVICE_ACCOUNT_KEY` (base64, Sensitive) and `GEMINI_MODEL=gemini-3.5-flash`, redeployed, and chat logging works on the iPhone. `GEMINI_API_KEY` is unused (D22). The chat now names the cause of an AI failure (missing settings, refused key, missing model) instead of one generic message.
 - [x] M3.2 `lib/ai/prompts/parse-text.ts` + `lib/ai/parse-text.ts`: JSON schema output, category names in prompt, map unknown category → Others, amounts → sen, Zod re-validate, one retry.
 - [x] M3.3 `actions/ai.ts` `parseTextEntry`: `consume_ai_call()` first; returns `{reply, language, drafts}`; writes `preferred_language`.
 - [x] M3.4 Non-logging messages (questions, small talk) → one-line reply pointing to Dashboard/History, no drafts (D20).
