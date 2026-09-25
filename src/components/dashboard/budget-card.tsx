@@ -1,5 +1,5 @@
 import { formatRM } from "@/lib/money";
-import { Calendar } from "lucide-react";
+import { Calendar, TrendingUp } from "lucide-react";
 import { BudgetStep } from "@/components/onboarding/budget-step";
 
 interface BudgetCardProps {
@@ -7,14 +7,30 @@ interface BudgetCardProps {
   spentSen: number;
   remainingSen: number;
   daysRemaining: number;
+  /** "YYYY-MM" of the month shown. */
+  month: string;
+  /** Projected out-of-cash day of this month; null = "On track" (PRD §8.1). */
+  outOfCashDay: number | null;
+  exceeded: boolean;
 }
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function BudgetCard({
   budgetSen,
   spentSen,
   remainingSen,
   daysRemaining,
+  month,
+  outOfCashDay,
+  exceeded,
 }: BudgetCardProps) {
+  const monthLabel = MONTHS[Number(month.slice(5, 7)) - 1] ?? "";
+  const projection = exceeded
+    ? { text: "Budget used up", tone: "text-rose-300" }
+    : outOfCashDay !== null
+      ? { text: `At this pace you run out on ${outOfCashDay} ${monthLabel}`, tone: "text-amber-300" }
+      : { text: "On track", tone: "text-emerald-300" };
   const percentUsed = budgetSen > 0 ? Math.min(100, Math.round((spentSen / budgetSen) * 100)) : 0;
 
   return (
@@ -69,6 +85,14 @@ export function BudgetCard({
                     style={{ width: `${percentUsed}%` }}
                   />
                 </div>
+
+                <p
+                  id="budget-projection"
+                  className={`flex items-center gap-1.5 mt-3 text-xs font-semibold ${projection.tone}`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" aria-hidden />
+                  {projection.text}
+                </p>
               </>
             )}
           </div>

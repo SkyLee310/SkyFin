@@ -2,7 +2,7 @@
 -- Run with `npx supabase test db` against the local stack. Everything rolls back at the end.
 -- User A is aaaaaaaa-…, user B is bbbbbbbb-…; B plays the attacker.
 begin;
-select plan(51);
+select plan(54);
 
 -- ============ FIXTURES (as postgres, which owns the tables and so bypasses RLS) ============
 insert into auth.users (id, email) values
@@ -161,6 +161,21 @@ select is(public.consume_ai_call(), true, 'B can call consume_ai_call');
 select is((select bool_and(public.consume_ai_call()) from generate_series(2, 100)), true,
   'calls 2 to 100 of the day are allowed');
 select is(public.consume_ai_call(), false, 'call 101 of the day is refused');
+
+-- M5.2 / M7.3: (user_id, dedup_key) is unique, which is what makes every warning and audit job
+-- idempotent: a repeat is a unique violation (or a no-op with ON CONFLICT DO NOTHING).
+select lives_ok(
+  $$ insert into public.audit_reports (user_id, type, level, dedup_key, content)
+     values ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'budget_warning', 'info', 'threshold:50:2026-09', '{}') $$,
+  'B stores a threshold warning');
+select throws_ok(
+  $$ insert into public.audit_reports (user_id, type, level, dedup_key, content)
+     values ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'budget_warning', 'info', 'threshold:50:2026-09', '{}') $$,
+  '23505', null,
+  'the same dedup_key twice is a unique violation');
+select is(
+  (select count(*) from public.audit_reports where dedup_key = 'weekly:2026-09-14'), 1::bigint,
+  'another user''s identical dedup_key does not collide (and stays hidden)');
 
 -- ============ ANON ============
 select set_config('request.jwt.claims', '{"role": "anon"}', true);
