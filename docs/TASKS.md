@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Last updated | 2026-09-24 |
+| Last updated | 2026-09-25 |
 | Related | [PRD.md](./PRD.md) · [TECH_SPEC.md](./TECH_SPEC.md) |
 
 Seven milestones. Each one is a **vertical slice**: it touches DB → server → UI, is deployed to Vercel, and ends with a demo you can do on the iPhone. No milestone starts until the previous demo passes on a real device.
@@ -25,7 +25,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M1 — Sign in and see my budget (Owner: Claude)
 
-> **Status (2026-09-22):** `m1` is pushed to `main` (Sky approved) and live at `https://skyfin-ai.vercel.app`. Google OAuth is confirmed working in production, including from the iOS Home Screen icon — this fixed an initial `Unsupported provider: provider is not enabled` error, which turned out to be a real Google Cloud OAuth client never having been created (Supabase's "Client IDs" field needs the actual Google-issued client ID, not a free-text name). 3 of the 4 Phase C spike checks have passed on Sky's iPhone: initial Home Screen sign-in, force-quit/reopen persistence, and delete/re-add-icon fresh sign-in. The 4th — reopening after over an hour to confirm silent token refresh — is still pending; it needs real elapsed time so it'll be confirmed whenever Sky next opens the app after a long gap. D26 (turn off new sign-ups) is now actionable since Sky's first production sign-in has happened. M2 reached `main` first (PR #1, PR #2), so the rest of the M1 budget slice (M1.8, M1.12–M1.14, M1.17) was reconciled onto M2's Dashboard through branch `m1-budget` (2026-09-24) instead of merging `m1`. Remaining M1 work: M1.18 (bundle check), then the real-device M1 demo.
+> **Status (2026-09-22):** `m1` is pushed to `main` (Sky approved) and live at `https://skyfin-ai.vercel.app`. Google OAuth is confirmed working in production, including from the iOS Home Screen icon — this fixed an initial `Unsupported provider: provider is not enabled` error, which turned out to be a real Google Cloud OAuth client never having been created (Supabase's "Client IDs" field needs the actual Google-issued client ID, not a free-text name). 3 of the 4 Phase C spike checks have passed on Sky's iPhone: initial Home Screen sign-in, force-quit/reopen persistence, and delete/re-add-icon fresh sign-in. The 4th — reopening after over an hour to confirm silent token refresh — is still pending; it needs real elapsed time so it'll be confirmed whenever Sky next opens the app after a long gap. D26 (turn off new sign-ups) is now actionable since Sky's first production sign-in has happened. M2 reached `main` first (PR #1, PR #2), so the rest of the M1 budget slice (M1.8, M1.12–M1.14, M1.17) was reconciled onto M2's Dashboard through branch `m1-budget` (2026-09-24) instead of merging `m1`. Remaining M1 work: the real-device M1 demo (M1.18 was done on 2026-09-25 alongside M5–M7).
 
 **Demo:** On the iPhone, open the Vercel URL in Safari → Add to Home Screen → open from the icon → Sign in with Google → set budget RM 800 → Dashboard shows "RM 800.00" with "left" beside it and "Spent RM 0.00 of RM 800.00" below. Close and reopen from the icon: still signed in.
 
@@ -59,7 +59,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [x] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from every table; exact grants asserted (D25).
 - [x] M1.16 Unit tests for `money.ts` and `dates.ts` (23:59 / 00:01 MYT, month ends, February).
 - [x] M1.17 E2E `tests/e2e/onboarding.spec.ts` (F2): a new user sees "Set your monthly budget" and the sheet; set RM 800 → the card shows "RM 800.00" left and "Spent RM 0.00 of RM 800.00"; with an expense dated this month, edit to RM 850.50 → the card updates at once and still deducts that expense; RM 0 is accepted; negative amounts and 3 decimals are rejected; reopening the sheet from the card shows the saved budget; dismissing the onboarding sheet leaves a zero-budget card that reopens it (F2-2). All 19 e2e tests pass locally (auth 6, m2-manual-logging 4, pwa 2, onboarding 7) against a local Supabase stack (2026-09-24).
-- [ ] M1.18 `scripts/check-client-bundle.mjs` as the `postbuild` script (F1 criterion 4): `npm run build` fails, locally and on Vercel, if `.next/static` contains any TECH_SPEC §8 pattern.
+- [x] M1.18 `scripts/check-client-bundle.mjs` as the `postbuild` script (F1 criterion 4): `npm run build` fails, locally and on Vercel, if `.next/static` contains any TECH_SPEC §8 pattern. It also scans the built service worker, and any real secret value present in the build environment; a planted `GEMINI` string fails it (checked 2026-09-25).
 
 **Done when:** demo passes on a real iPhone; F1 criteria 1, 2 (tables; Storage paths in M4.12) and 4 pass; all F2 criteria pass. F1 criterion 3 is tested in M2.1.
 
@@ -157,25 +157,27 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M5 — Get warned in the app and see where money went
 
-**Demo:** Seed test data: budget RM 800, RM 400 spent by day 10 of a 30-day month → Dashboard banner "warning", out-of-cash date = day 20. Add a RM 180 expense → `spike` banner asks "Is this a one-off purchase?" → Yes → projection improves. Donut, payment-method bar and Needs vs Wants bar all match History totals; tap the Food slice → History filtered to Food.
+> **Status (2026-09-25):** Built on branch `claude/modest-cerf-r5i6uy` together with M6 and M7, at Sky's request to finish v1 in one go. Unit (`accounting`, `stats`), pgTAP (dedup key) and E2E (`m5-warnings-charts.spec.ts`) pass on the local stack. No migration was needed. The demo's "RM 400 by day 10" case gives pace 1.50, which D15 makes `critical`, not `warning`; the criterion was corrected (D32). The in-app check runs on the real date, so the E2E derives date-dependent expectations from `evaluatePace`; the fixed-date numbers are pinned in `tests/unit/accounting.test.ts`.
+
+**Demo:** Seed test data: budget RM 800, RM 400 spent by day 10 of a 30-day month → Dashboard banner "critical" (pace 1.50 ≥ 1.30, D32), out-of-cash date = day 20. Add a RM 180 expense → `spike` banner asks "Is this a one-off purchase?" → Yes → projection improves. Donut, payment-method bar and Needs vs Wants bar all match History totals; tap the Food slice → History filtered to Food.
 
 **Server**
-- [ ] M5.1 `lib/agents/accounting.ts` `evaluatePace` (pure) per PRD §8.1, including S′ for excluded rows.
-- [ ] M5.2 `runAccountingCheck`: insert `budget_warning` with `dedup_key` (`pace:<level>:<date>`, `threshold:<50|80|100>:<yyyy-mm>`, `spike:<txn id>`); ignore unique violations.
-- [ ] M5.3 Call the check from `saveTransactions`, `updateTransaction`, `deleteTransaction`, `updateBudget`, `setExcludeFromPace`; return the new warning to the client.
-- [ ] M5.4 `setExcludeFromPace` action.
-- [ ] M5.5 `lib/i18n/{en,zh,ms}.ts` warning templates.
-- [ ] M5.6 `lib/queries/stats.ts`: by category, by payment method, Needs vs Wants, last month's Wants %.
+- [x] M5.1 `lib/agents/accounting.ts` `evaluatePace` (pure) per PRD §8.1, including S′ for excluded rows.
+- [x] M5.2 `runAccountingCheck`: insert `budget_warning` with `dedup_key` (`pace:<level>:<date>`, `threshold:<50|80|100>:<yyyy-mm>`, `spike:<txn id>`); ignore unique violations.
+- [x] M5.3 Call the check from `saveTransactions`, `updateTransaction`, `deleteTransaction`, `updateBudget`, `setExcludeFromPace`; return the new warning to the client.
+- [x] M5.4 `setExcludeFromPace` action.
+- [x] M5.5 `lib/i18n/{en,zh,ms}.ts` warning templates.
+- [x] M5.6 `lib/queries/stats.ts`: by category, by payment method, Needs vs Wants, last month's Wants %.
 
 **UI**
-- [ ] M5.7 `warning-banner.tsx`: level colours, dismiss, spike Yes/No buttons.
-- [ ] M5.8 Budget card: projected out-of-cash date / "On track".
-- [ ] M5.9 `category-donut.tsx` (tap → History filter), `payment-bar.tsx`, `needs-wants-bar.tsx`.
-- [ ] M5.10 History row action: toggle "one-off purchase".
+- [x] M5.7 `warning-banner.tsx`: level colours, dismiss, spike Yes/No buttons.
+- [x] M5.8 Budget card: projected out-of-cash date / "On track".
+- [x] M5.9 `category-donut.tsx` (tap → History filter), `payment-bar.tsx`, `needs-wants-bar.tsx`.
+- [x] M5.10 History row action: toggle "one-off purchase".
 
 **Test**
-- [ ] M5.11 `evaluatePace` table tests: S = 0, B = 0, days 1–2 suppression, pace 1.15/1.30 boundaries, 50/80/100% crossings, spike 20%, excluded rows.
-- [ ] M5.12 Unit: dashboard figures equal SQL sums on a fixture month.
+- [x] M5.11 `evaluatePace` table tests: S = 0, B = 0, days 1–2 suppression, pace 1.15/1.30 boundaries, 50/80/100% crossings, spike 20%, excluded rows.
+- [x] M5.12 Unit: dashboard figures equal SQL sums on a fixture month. `tests/unit/stats.test.ts` sums a hand-worked fixture month (including 0.10 + 0.20); `m5-warnings-charts.spec.ts` checks donut, payment and Needs vs Wants against History on the page.
 
 **Done when:** demo passes; all F9 and F10 criteria pass; F8 criteria 3–4 pass.
 
@@ -183,26 +185,29 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M6 — Get warned with the app closed
 
+> **Status (2026-09-25):** Built with M5 and M7. E2E (`m6-push-cron.spec.ts`) runs the cron the way Vercel does and counts pushes on a local stand-in push service (`PUSH_FAKE`, D33); a production build registers the service worker at scope `/` and serves `/offline` when the network is gone. The service worker is built with `@serwist/turbopack`, since Next 16 builds with Turbopack and `@serwist/next` is a webpack plugin (D37). Open: M6.1 needs Sky to generate VAPID keys and add them, and `CRON_SECRET`, to Vercel; M6.14 needs the real iPhone. Before production: Sky's OK to push to `main`.
+
 **Demo:** Fresh install from Safari shows Add-to-Home-Screen steps (no notification prompt). Open from the icon → onboarding asks to enable notifications → allow. Log expenses that cross 80% → close the app → run the cron manually (`curl` with the bearer token) → push arrives on the lock screen → tap → app opens on Dashboard with the banner.
 
 **Server**
 - [ ] M6.1 Generate VAPID keys; env vars in Vercel.
-- [ ] M6.2 `lib/push.ts` `sendPush(userId, payload)`; delete subscriptions on 404/410.
-- [ ] M6.3 `api/push/subscribe/route.ts` POST/DELETE.
-- [ ] M6.4 `lib/supabase/admin.ts` (service role, `server-only`).
-- [ ] M6.5 `api/cron/daily/route.ts`: bearer check; for each profile run `runAccountingCheck` and push new warnings; call `receipts_to_purge()` and delete via Storage API; set `receipt_url = null` on rows whose image was purged.
-- [ ] M6.6 `vercel.json` cron `0 14 * * *`.
+  - **Progress (2026-09-25):** code reads `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (already in `.env.example`). Sky: run `npx web-push generate-vapid-keys`, add the three (private key Sensitive) plus `CRON_SECRET` and `SUPABASE_SECRET_KEY` to Vercel Production and Preview.
+- [x] M6.2 `lib/push.ts` `sendPush(userId, payload)`; delete subscriptions on 404/410.
+- [x] M6.3 `api/push/subscribe/route.ts` POST/DELETE.
+- [x] M6.4 `lib/supabase/admin.ts` (service role, `server-only`).
+- [x] M6.5 `api/cron/daily/route.ts`: bearer check; for each profile run `runAccountingCheck` and push new warnings; call `receipts_to_purge()` and delete via Storage API; set `receipt_url = null` on rows whose image was purged.
+- [x] M6.6 `vercel.json` cron `0 14 * * *`.
 
 **UI**
-- [ ] M6.7 `app/sw.ts` (Serwist): precache shell, `/offline` fallback, `push` → `showNotification`, `notificationclick` → open target URL.
-- [ ] M6.8 Onboarding: detect standalone (`navigator.standalone` / display-mode); install guide vs notify step; permission prompt only after a tap.
-- [ ] M6.9 Re-subscribe on app open if permission granted but no subscription stored.
-- [ ] M6.10 Audit tab badge for unread `audit_reports`.
-- [ ] M6.11 History: "Image expired" placeholder when `receipt_url` is null on a receipt group.
+- [x] M6.7 `app/sw.ts` (Serwist): precache shell, `/offline` fallback, `push` → `showNotification`, `notificationclick` → open target URL.
+- [x] M6.8 Onboarding: detect standalone (`navigator.standalone` / display-mode); install guide vs notify step; permission prompt only after a tap.
+- [x] M6.9 Re-subscribe on app open if permission granted but no subscription stored.
+- [x] M6.10 Audit tab badge for unread `audit_reports` (weekly and monthly reports; budget warnings live in the banner, D38).
+- [x] M6.11 History: "Image expired" placeholder when `receipt_url` is null on a receipt group. Every receipt entry now gets a `receipt_group_id`, split or not, so a single receipt row can show it too (D36).
 
 **Test**
-- [ ] M6.12 Cron route returns 401 without the token.
-- [ ] M6.13 Running the cron twice in a row sends one push, not two.
+- [x] M6.12 Cron route returns 401 without the token.
+- [x] M6.13 Running the cron twice in a row sends one push, not two.
 - [ ] M6.14 Real iPhone: push received with the app closed.
 
 **Done when:** demo passes; F11 and F15 criteria pass.
@@ -211,23 +216,25 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M7 — Weekly and monthly audits
 
+> **Status (2026-09-25):** Built with M5 and M6. Unit (`audit`, `report-view`, `schedule`) and E2E (`m7-audits.spec.ts`, D30 fake model) pass. The model no longer writes `est_monthly_saving_rm`: the agent pre-computes saving options and the model picks one per tip, and any RM amount in its words must be a pre-computed figure (D34). Open: M7.11 on the real iPhone, and a first paid run of the audit prompt once Vertex AI credentials are in (`npm run check:gemini`, M3.1).
+
 **Demo:** Seed a week with 4 text-logged boba entries (RM 8–9.50, no merchant) → trigger the cron with a Sunday date override → push "Your weekly audit is ready" → AI Audit tab shows headline, Needs vs Wants, top 3 categories, boba as a micro-expense with monthly projection, exactly 3 tips in `preferred_language`. Run again → no duplicate. Trigger with a last-day-of-month date → monthly report with suggested budget → trigger with the 1st → budget changes, push offers undo → tap undo → previous budget restored.
 
 **Server**
-- [ ] M7.1 `lib/queries/stats.ts`: period stats + `micro_expenses` query on `coalesce(merchant, item_label)`.
-- [ ] M7.2 `lib/ai/prompts/audit.ts` + `lib/ai/audit.ts`: persona prompt, stats + rows in, `{headline, tips[3]}` out, Zod, one retry, stats-only fallback.
-- [ ] M7.3 `lib/agents/audit.ts` `generateAudit`: weekly `dedup_key = weekly:<mon>`, monthly `monthly:<yyyy-mm>` with `suggested_budget_sen` and `previous_budget_sen`.
-- [ ] M7.4 Cron: Sunday (MYT) → weekly; tomorrow is the 1st → monthly; today is the 1st → apply last month's suggested budget + push. Add a `?date=YYYY-MM-DD` override accepted only outside production for testing.
-- [ ] M7.5 `actions/audits.ts`: `markReportRead`, `restorePreviousBudget`.
+- [x] M7.1 `lib/queries/stats.ts`: period stats + `micro_expenses` query on `coalesce(merchant, item_label)`.
+- [x] M7.2 `lib/ai/prompts/audit.ts` + `lib/ai/audit.ts`: persona prompt, stats + rows in, `{headline, tips[3]}` out, Zod, one retry, stats-only fallback.
+- [x] M7.3 `lib/agents/audit.ts` `generateAudit`: weekly `dedup_key = weekly:<mon>`, monthly `monthly:<yyyy-mm>` with `suggested_budget_sen` and `previous_budget_sen`.
+- [x] M7.4 Cron: Sunday (MYT) → weekly; tomorrow is the 1st → monthly; today is the 1st → apply last month's suggested budget + push. Add a `?date=YYYY-MM-DD` override accepted only outside production for testing. Also `?user=<uuid>` (same rule), and a 2-day back-fill window for missed runs (D35).
+- [x] M7.5 `actions/audits.ts`: `markReportRead`, `restorePreviousBudget`.
 
 **UI**
-- [ ] M7.6 `audit/page.tsx`: latest report on top, past reports list.
-- [ ] M7.7 `audit/[id]/page.tsx`: report view (headline, bars, micro-expenses, tips with RM savings).
-- [ ] M7.8 Budget-applied banner with one-tap undo.
+- [x] M7.6 `audit/page.tsx`: latest report on top, past reports list.
+- [x] M7.7 `audit/[id]/page.tsx`: report view (headline, bars, micro-expenses, tips with RM savings).
+- [x] M7.8 Budget-applied banner with one-tap undo.
 
 **Test**
-- [ ] M7.9 Every RM figure in the rendered report matches the stats JSON (automated string check).
-- [ ] M7.10 Month-end detection for Feb (28/29), 30- and 31-day months.
+- [x] M7.9 Every RM figure in the rendered report matches the stats JSON (automated string check).
+- [x] M7.10 Month-end detection for Feb (28/29), 30- and 31-day months.
 - [ ] M7.11 Real iPhone: Sunday push → report opens.
 
 **Done when:** demo passes; all F12 and F13 criteria pass. v1 complete.

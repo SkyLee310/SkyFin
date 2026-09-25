@@ -34,6 +34,13 @@ This document records architectural, operational, and organizational decisions f
 | D28 | Function region | Vercel functions run in `sin1` (Singapore), next to the Supabase project; the Hobby default `iad1` would add a US–Singapore round trip to every query. | 2026-09-21 | Approved |
 | D30 | Fake AI in E2E | `AI_FAKE=1` (set only by Playwright's web server) makes the parsers use canned model output instead of Gemini; `NODE_ENV=production` always turns it off. See the record below. | 2026-09-24 | Approved |
 | D31 | Receipt upload | The server picks the object path and returns a signed upload URL (`createReceiptUpload`); the browser PUTs the JPEG straight to Storage. The browser Supabase client is not used. See the record below. | 2026-09-24 | Proposed (awaiting Sky) |
+| D32 | Warning levels in practice | Every rule that fires is stored as its own `budget_warning`; the banner and push show the most severe. F10-1's example (pace 1.50) is `critical` under D15. See the record below. | 2026-09-25 | Decided by Claude under Sky's 2026-09-25 instruction; Sky can overturn |
+| D33 | Push and cron in tests | `PUSH_FAKE=1` (Playwright only) posts pushes as plain JSON; the cron's `?date=` / `?user=` overrides work only when `VERCEL_ENV` isn't `production`. See the record below. | 2026-09-25 | Decided by Claude under Sky's 2026-09-25 instruction; Sky can overturn |
+| D34 | Audit figures | Saving options with RM savings are pre-computed; the model picks one per tip and writes words only; RM amounts in its text must be pre-computed figures. See the record below. | 2026-09-25 | Decided by Claude under Sky's 2026-09-25 instruction; Sky can overturn |
+| D35 | Cron back-fill | Weekly and monthly audits run up to 2 days late; the suggested budget is applied from the 1st to the 3rd. See the record below. | 2026-09-25 | Decided by Claude under Sky's 2026-09-25 instruction; Sky can overturn |
+| D36 | Receipt group id | Every receipt entry gets a `receipt_group_id`, not only splits, so "Image expired" works for single receipts. | 2026-09-25 | Decided by Claude under Sky's 2026-09-25 instruction; Sky can overturn |
+| D37 | Service worker build | `@serwist/turbopack` instead of `@serwist/next`. See the record below. | 2026-09-25 | Decided by Claude under Sky's 2026-09-25 instruction; Sky can overturn |
+| D38 | Audit tab badge | Counts unread weekly and monthly reports only; budget warnings are handled in the banner. | 2026-09-25 | Decided by Claude under Sky's 2026-09-25 instruction; Sky can overturn |
 
 ---
 
@@ -107,3 +114,34 @@ This document records architectural, operational, and organizational decisions f
 - **Alternative not taken:** uploading through a Server Action. Simpler, but the photo would travel through Vercel and there'd be no progress bar.
 - **Risk:** a signed upload URL is valid for 2 hours and works for one path only. Anyone holding it could upload one file to that path, and only until something is stored there, since there is no update policy.
 
+
+### D32: Warning levels when several rules fire at once
+
+- **Context:** PRD F10-1 said RM 400 of RM 800 by day 10 of 30 gives `warning`, but its pace is 400 ÷ (800 × 10 ÷ 30) = 1.50, and D15 makes pace ≥ 1.30 `critical`. One save can also fire several rules together (the 50% threshold, a pace level and a spike).
+- **Decision:**
+  - The rule table (D15) wins; F10-1 and the M5 demo now say `critical`.
+  - `evaluatePace` returns every warning that fires, most severe first (spike > critical > warning > info). `runAccountingCheck` stores each with its own dedup key, so every rule keeps its "once a day / once a month" promise; e.g. when a save jumps from 40% to 85%, both the 50% and 80% keys are stored, so "half used" can't appear later.
+  - The banner (in the app layout, so it shows on every tab) shows the most severe unread warning; Dismiss marks every unread non-spike warning read; a spike stays until answered. The evening cron pushes one notification per run: the most severe warning not yet pushed (`content.pushed_at`), including ones raised in the app during the day (F11-1).
+
+### D33: Push and cron in tests
+
+- **Context:** Web Push to Apple needs a real device; E2E still has to prove "one push, not two" (M6.13) and the 410 clean-up (F11-2), and M7's demo needs the cron to run as a Sunday or a month end.
+- **Decision:**
+  - `PUSH_FAKE=1` with `NODE_ENV !== "production"` makes `sendPush` POST the payload as JSON to the subscription endpoint, so a local HTTP server in the test counts pushes. Only the Playwright web server sets it, like `AI_FAKE` (D30).
+  - `/api/cron/daily?date=YYYY-MM-DD&user=<uuid>` runs as another MYT date and for one user. Both are refused when `VERCEL_ENV` is `production`, so they work locally and on Preview deployments (where Sky can run the M7 demo), and still need the bearer token.
+
+### D34: The model never writes an audit figure
+
+- **Context:** TECH_SPEC had the model return `est_monthly_saving_rm` per tip, which conflicts with "the model writes words, not numbers" (AGENTS.md) and with M7.9.
+- **Decision:** `lib/agents/audit.ts` computes saving options first (half a micro-expense's monthly cost; 30% of a top Wants category; 10% of a top category; a no-spend day at 5% and pausing before paying at 3% of monthly spend). The model returns `{ headline, tips: [{ option_id, title, detail }] }` and is told never to write amounts. Output is rejected (one retry, then the stats-only template text) when it has the wrong number of tips, repeats or invents an option, or contains an RM amount that isn't one of the report's figures. `tests/unit/report-view.test.tsx` renders reports and checks every RM amount against `reportFigures()` (M7.9).
+- **Suggested budget:** Needs + 90% of Wants for the month, rounded up to RM 10, kept within 80–120% of the current budget (no clamp when the budget is 0).
+
+### D35: Back-fill for a late or missed cron
+
+- **Context:** Vercel Hobby runs the cron roughly on time, and could skip a day (D18). "Date-based and idempotent" needs a rule for what a later run makes up.
+- **Decision:** `lib/jobs/schedule.ts`: the weekly audit for the latest Sunday runs on Sunday or up to 2 days after; the monthly review runs on the last day or on the 1st–2nd for last month; last month's suggested budget is applied on the 1st–3rd. Later than that, the job is skipped rather than surprising the user. A period with no expenses gets no report. The budget is applied once (`content.budget.applied_at`, set with a conditional update before the budget changes), and the value it replaced is stored for the undo.
+
+### D37: Serwist through `@serwist/turbopack`
+
+- **Context:** `@serwist/next` is a webpack plugin; Next 16 builds with Turbopack by default, so it would not emit a service worker.
+- **Decision:** `src/app/serwist/[path]/route.ts` uses `createSerwistRoute` to bundle `src/app/sw.ts` with esbuild at build time and serve `/serwist/sw.js` with `Service-Worker-Allowed: /`; the root layout registers it with `SerwistProvider` in production builds only. It precaches the build's static files and `/offline`, caches `/_next/static` and icons, and sends everything else (pages, RSC, actions, API) to the network, so no one's money data sits in a cache. It also shows pushes and opens the tapped notification's URL. The proxy skips `/serwist/`, and `/offline` is public.
