@@ -7,7 +7,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/unit/**/*.test.ts"],
+    include: ["tests/unit/**/*.test.{ts,tsx}"],
     // Vercel runs in UTC. On a machine set to MYT, a helper that reads local time
     // would pass the MYT date tests by accident.
     env: { TZ: "UTC" },

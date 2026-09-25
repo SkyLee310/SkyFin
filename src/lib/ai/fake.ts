@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AuditPromptInput } from "./prompts/audit";
 import type { ParseTextPromptInput } from "./prompts/parse-text";
 
 // D30: canned model output for E2E tests (AI_FAKE=1, never in production; see isFakeAiEnabled).
@@ -116,5 +117,24 @@ export function fakeParseReceipt(image: Uint8Array): string {
     is_receipt: true, total_amount: 42.3, currency_is_rm: true, merchant: "99 Speedmart", date: null,
     suggested_category: "Groceries", suggested_is_essential: true, suggested_payment_method: "Cash",
     item_label: "groceries", confidence: 0.93,
+  });
+}
+
+/** Canned audit words (D30): picks the first three saving options, writes no amounts. */
+export function fakeAudit(input: AuditPromptInput): string {
+  const [a, b, c] = input.options;
+  const headline =
+    input.language === "zh"
+      ? `这${input.kind === "weekly" ? "周" : "个月"}小额消费有点多，尤其是 ${a?.label ?? "零食"}。`
+      : input.language === "ms"
+        ? `Belanja kecil banyak ${input.kind === "weekly" ? "minggu" : "bulan"} ini, terutamanya ${a?.label ?? "snek"}.`
+        : `Small buys added up this ${input.kind === "weekly" ? "week" : "month"}, led by ${a?.label ?? "snacks"}.`;
+  return JSON.stringify({
+    headline,
+    tips: [a, b, c].filter(Boolean).map((o) => ({
+      option_id: o!.id,
+      title: `Go easy on ${o!.label}`,
+      detail: `Try the mamak or kolej café instead of paying for ${o!.label} every time.`,
+    })),
   });
 }
