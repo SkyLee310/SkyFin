@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 // values in process.env win over .env files, and the dev server and workers inherit them.
 // Workers inherit the main process's env, so only the main process asks the CLI.
 if (!process.env.TEST_WORKER_INDEX) {
-  let status: { API_URL?: string; PUBLISHABLE_KEY?: string; MAILPIT_URL?: string } = {};
+  let status: { API_URL?: string; PUBLISHABLE_KEY?: string; SECRET_KEY?: string; MAILPIT_URL?: string } = {};
   try {
     status = JSON.parse(
       execSync("npx supabase status -o json", { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }),
@@ -13,11 +13,15 @@ if (!process.env.TEST_WORKER_INDEX) {
   } catch {
     // Reported below.
   }
-  if (!status.API_URL || !status.PUBLISHABLE_KEY || !status.MAILPIT_URL) {
+  if (!status.API_URL || !status.PUBLISHABLE_KEY || !status.SECRET_KEY || !status.MAILPIT_URL) {
     throw new Error("E2E needs the local Supabase stack. Run `npx supabase start`, then try again.");
   }
   process.env.NEXT_PUBLIC_SUPABASE_URL = status.API_URL;
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = status.PUBLISHABLE_KEY;
+  // The local stack's secret key, for the cron route's admin client only.
+  process.env.SUPABASE_SECRET_KEY = status.SECRET_KEY;
+  // A throwaway bearer token for /api/cron/daily; tests send the same one.
+  process.env.CRON_SECRET = "e2e-cron-secret-not-for-production";
   // The local stack's mail catcher, where sign-in emails land (tests/e2e/support/session.ts).
   process.env.MAILPIT_URL = status.MAILPIT_URL;
 }
@@ -38,8 +42,9 @@ export default defineConfig({
     // Wait for the port, not a URL: a URL check follows the proxy's redirects, so readiness
     // would depend on app routes.
     port: PORT,
-    // D30: canned AI output instead of Gemini (src/lib/ai/fake.ts); ignored in production builds.
-    env: { AI_FAKE: "1" },
+    // D30: canned AI output instead of Gemini (src/lib/ai/fake.ts); PUSH_FAKE posts pushes as
+    // plain JSON to the subscription endpoint (src/lib/push.ts). Both are ignored in production.
+    env: { AI_FAKE: "1", PUSH_FAKE: "1" },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

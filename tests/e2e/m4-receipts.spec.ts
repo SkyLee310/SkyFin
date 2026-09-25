@@ -216,5 +216,8 @@ test("at the daily AI cap the photo is kept and the card opens empty to fill by 
   await page.locator("#btn-confirm-save").click();
   await expect(page.getByText("Transaction recorded successfully!")).toBeVisible();
   const { data: rows } = await user.supabase.from("transactions").select("amount, receipt_url, receipt_group_id");
-  expect(rows).toEqual([{ amount: 42.3, receipt_url: (await storedReceipts())[0], receipt_group_id: null }]);
+  // A single receipt row gets a group id too, so History can show "Image expired" later (FR-26).
+  expect(rows).toEqual([
+    { amount: 42.3, receipt_url: (await storedReceipts())[0], receipt_group_id: expect.any(String) },
+  ]);
 });

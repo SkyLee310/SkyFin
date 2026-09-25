@@ -3,7 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 
 // Signed-out visitors may open these. Route handlers under /api check auth themselves (the cron
 // route uses CRON_SECRET), so they answer 401 instead of redirecting to a page.
-const PUBLIC_PATHS = ["/login", "/auth", "/api"];
+// /offline is the service worker's precached fallback page.
+const PUBLIC_PATHS = ["/login", "/auth", "/api", "/offline"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));

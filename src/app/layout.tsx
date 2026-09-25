@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SerwistProvider } from "@serwist/turbopack/react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* The service worker (offline page, push) runs in production builds only. */}
+        <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV !== "production"}>
+          {children}
+        </SerwistProvider>
+      </body>
     </html>
   );
 }

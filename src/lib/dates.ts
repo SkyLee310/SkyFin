@@ -59,3 +59,35 @@ function daysInMonthOf(year: number, month: number): number {
 export function isFutureDateMYT(dateStr: string, now: Date = new Date()): boolean {
   return dateStr > todayMYT(now);
 }
+
+/** A business date moved by whole days: addDaysMYT("2026-03-01", -1) → "2026-02-28". */
+export function addDaysMYT(date: string, days: number): string {
+  monthRangeMYT(date); // validates
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Day of the week of a business date, 0 = Sunday … 6 = Saturday. */
+export function weekdayMYT(date: string): number {
+  monthRangeMYT(date); // validates
+  return new Date(`${date}T00:00:00Z`).getUTCDay();
+}
+
+/** Whether a business date is the last day of its month (D9: the monthly audit runs then). */
+export function isMonthEndMYT(date: string): boolean {
+  const { day, daysInMonth } = monthRangeMYT(date);
+  return day === daysInMonth;
+}
+
+/** "YYYY-MM" shifted by whole months: shiftMonth("2026-01", -1) → "2025-12". */
+export function shiftMonth(yearMonth: string, months: number): string {
+  const [year, month] = yearMonth.split("-").map(Number);
+  const index = year! * 12 + (month! - 1) + months;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+}
+
+/** Whole days from `from` to `to` (both business dates). */
+export function daysBetweenMYT(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+}
