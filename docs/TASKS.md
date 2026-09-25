@@ -59,7 +59,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [x] M1.15 `supabase/tests/rls.test.sql`: second user reads zero rows from every table; exact grants asserted (D25).
 - [x] M1.16 Unit tests for `money.ts` and `dates.ts` (23:59 / 00:01 MYT, month ends, February).
 - [x] M1.17 E2E `tests/e2e/onboarding.spec.ts` (F2): a new user sees "Set your monthly budget" and the sheet; set RM 800 → the card shows "RM 800.00" left and "Spent RM 0.00 of RM 800.00"; with an expense dated this month, edit to RM 850.50 → the card updates at once and still deducts that expense; RM 0 is accepted; negative amounts and 3 decimals are rejected; reopening the sheet from the card shows the saved budget; dismissing the onboarding sheet leaves a zero-budget card that reopens it (F2-2). All 19 e2e tests pass locally (auth 6, m2-manual-logging 4, pwa 2, onboarding 7) against a local Supabase stack (2026-09-24).
-- [ ] M1.18 `scripts/check-client-bundle.mjs` as the `postbuild` script (F1 criterion 4): `npm run build` fails, locally and on Vercel, if `.next/static` contains any TECH_SPEC §8 pattern.
+- [x] M1.18 `scripts/check-client-bundle.mjs` as the `postbuild` script (F1 criterion 4): `npm run build` fails, locally and on Vercel, if `.next/static` contains any TECH_SPEC §8 pattern. It also fails on the values of `GOOGLE_SERVICE_ACCOUNT_KEY`, `SUPABASE_SECRET_KEY`, `VAPID_PRIVATE_KEY` and `CRON_SECRET` when the build has them set (as on Vercel), and prints only the variable's name. Unit tests cover the scanner; a planted `sb_secret_` string fails the build (2026-09-25).
 
 **Done when:** demo passes on a real iPhone; F1 criteria 1, 2 (tables; Storage paths in M4.12) and 4 pass; all F2 criteria pass. F1 criterion 3 is tested in M2.1.
 

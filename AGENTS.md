@@ -31,7 +31,7 @@ npm run lint            # ESLint
 npm run typecheck       # tsc --noEmit
 npm test                # Vitest unit tests (tests/unit)
 npm run test:e2e        # Playwright, iPhone 15 viewport (tests/e2e)
-npm run build           # production build
+npm run build           # production build; postbuild fails it if a secret reached the client bundle
 npx supabase start      # local Supabase stack (needs Docker)
 npx supabase test db    # SQL tests in supabase/tests: RLS isolation, composite FK, dedup keys
 npm run test:ai-eval    # paid Gemini calls: run only when changing a model or prompt, or when asked
