@@ -26,7 +26,7 @@ A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth +
 | Layer | Choice | Notes |
 |---|---|---|
 | Framework | Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Node 24 | Server Components for reads, Server Actions for writes; session refresh in `src/proxy.ts` (Next 16's name for `middleware.ts`) |
-| Styling / UI | Tailwind CSS, shadcn/ui, Lucide icons | shadcn `Drawer` for the Confirmation Card |
+| Styling / UI | Tailwind CSS, shadcn/ui, Lucide icons | shadcn `Drawer` for the Confirmation Card; dark mode mirrors the Tailwind colour scales in `globals.css` (`prefers-color-scheme`), so components need no `dark:` classes |
 | Charts | Recharts | Tap-to-show tooltips only |
 | Validation | Zod | Shared schemas for actions, AI output and forms |
 | Dates | `date-fns` + `@date-fns/tz` | All business dates in `Asia/Kuala_Lumpur` |
