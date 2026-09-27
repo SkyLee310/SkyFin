@@ -39,7 +39,12 @@ test("form fields are 16px or larger and tap targets 44 px or larger", async ({ 
   await check("dashboard");
 
   await page.goto("/chat");
-  await page.locator("#chat-input").fill("nasi lemak 8.50, boba 12");
+  // A fill that lands before React hydrates the composer is lost (the dev server can be slow to
+  // hydrate right after goto), so fill again until Send enables.
+  await expect(async () => {
+    await page.locator("#chat-input").fill("nasi lemak 8.50, boba 12");
+    await expect(page.locator("#btn-chat-send")).toBeEnabled({ timeout: 1_000 });
+  }).toPass({ timeout: 20_000 });
   await page.locator("#btn-chat-send").click();
   await expect(page.getByTestId("draft-row")).toHaveCount(2);
   await check("chat");
