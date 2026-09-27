@@ -169,7 +169,9 @@ test("F15-2: opened from the Home Screen, the permission prompt appears only aft
     Object.defineProperty(navigator, "standalone", { value: true });
     const w = window as unknown as { __permissionAsks: number; Notification: unknown; PushManager: unknown };
     w.__permissionAsks = 0;
-    // Headless Chromium has Notification; make sure PushManager looks available too.
+    // WebKit on Windows (the iPhone 15 project) has neither Notification nor PushManager; stub
+    // whichever is missing so the app's pushSupported() check passes.
+    w.Notification ??= function Notification() {};
     w.PushManager ??= function PushManager() {};
     Object.defineProperty(Notification, "permission", { get: () => "default" });
     Notification.requestPermission = async () => {
