@@ -46,6 +46,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
   return (
     <HistoryView
       key={`${selectedMonth}-${selectedCategoryId || ""}-${selectedPayment || ""}-${params.essential || ""}`}
+      today={todayMYT()}
       initialMonth={selectedMonth}
       initialCategoryId={selectedCategoryId || ""}
       initialPayment={selectedPayment || ""}
