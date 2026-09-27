@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Last updated | 2026-09-27 |
+| Last updated | 2026-09-28 |
 | Related | [PRD.md](./PRD.md) · [TECH_SPEC.md](./TECH_SPEC.md) |
 
 Eight milestones. M1–M7 are **vertical slices**: each touches DB → server → UI, is deployed to Vercel, and ends with a demo you can do on the iPhone. No milestone starts until the previous demo passes on a real device; M8, a UI-only restyle, started early at Sky's request.
@@ -249,7 +249,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M8 — LedgerUI restyle (Owner: Claude)
 
-> **Status (2026-09-27):** Started 2026-09-26 at Sky's request, before the M1 and M5–M7 real-device demos, on branch `m8-ledger-ui` (D39). UI only: no schema, Server Action or data change, and E2E ids, texts and roles stay the same. Every screen is restyled, and M8.12 (Sky, 2026-09-27, branch `m8-tabbar-glass`) frosts the tab bar and slides its capsule. Lint and typecheck pass; `npm test` passes except the two `check-client-bundle` cases, which fail on Windows before M8 too. Open: M8.11 on the real iPhone.
+> **Status (2026-09-28):** Started 2026-09-26 at Sky's request, before the M1 and M5–M7 real-device demos, on branch `m8-ledger-ui` (D39). UI only: no schema, Server Action or data change, and E2E ids, texts and roles stay the same. Every screen is restyled; on branch `m8-tabbar-glass`, M8.12 (Sky, 2026-09-27) frosts the tab bar and slides its capsule, and M8.13 (2026-09-28) stops an empty Chat nudging itself up on arrival. Lint and typecheck pass; `npm test` passes except the two `check-client-bundle` cases, which fail on Windows before M8 too. Open: M8.11 on the real iPhone.
 >
 > **E2E (Windows, local stack, 2026-09-27):** the specs are unchanged. With 6 workers the suite fails 24 of 58, against 25 of 58 on the pre-M8 commit `eada9f2`: 22 are the same tests, and the others on either side are load flakes that pass with 1 worker. The first test in each worker can also hit `PGRST303 JWT issued at future` (clock skew). With 1 worker every failure is older than M8 and fails on `eada9f2` too: a `fill` before React hydrates is lost on the dev server (the m3 chat tests and `touch.spec.ts`; a retry passes them on some runs, not all); on a Sunday the cron also writes the weekly audit and sends a second push (m6 F11-1, the evening push, F11-2); the uncommitted local `0003_ai_usage_lockdown` refuses the tests' direct `ai_usage` insert (the m3 and m4 daily-cap tests); WebKit on Windows has no `Notification` (m6 F15-2); and the m4 History split-delete test is flaky (1 failure in 15 runs).
 
@@ -266,6 +266,7 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [x] M8.8 Warning and budget-applied banners, onboarding, login, offline page (with a "Try again" link: the Home Screen app has no pull-to-refresh).
 - [x] M8.9 App icons: a cream "S" on forest green, same sizes and masks.
 - [x] M8.12 Tab bar (Sky, 2026-09-27): dark frosted glass whose tint alone keeps the labels 4.5:1 over white, solid where `backdrop-filter` is missing or the system asks for less transparency or more contrast; the light capsule slides to a tapped tab while its page loads (`useLinkStatus`) and jumps under Reduce Motion. `bottom-nav` unit tests and `m8-tab-bar.spec.ts`; the m3 chat tests still lose their pre-hydration `fill` (note above), the same on `main`.
+- [x] M8.13 Chat arrival (Sky, 2026-09-28): an empty chat no longer scrolls on arrival, so its heading sits where every page's does (M8.1's scroll padding had turned the message list's mount-time `scrollIntoView` into an 8 px nudge), and the scroll to a new message is instant under Reduce Motion. `message-list` unit tests and `m8-chat-scroll.spec.ts`.
 
 **Test**
 - [x] M8.10 No Tailwind palette class left in `src/`; text pairs clear 4.5:1 in both modes; `dayLabelMYT` unit tests; E2E specs unchanged, and every failure left with 1 worker also fails before M8 (E2E note above).

@@ -19,11 +19,27 @@ interface MessageListProps {
   onRetry: (text: string) => void;
 }
 
+/**
+ * How to bring the newest entry into view, or null while the list is empty: nothing needs
+ * revealing then, and a scroll would only nudge the page as it opens. An explicit smooth scroll
+ * ignores the stylesheet's Reduce Motion rule, so Reduce Motion gets an instant one.
+ */
+export function newestEntryScroll(
+  messageCount: number,
+  pending: boolean,
+  reduceMotion: boolean,
+): ScrollIntoViewOptions | null {
+  if (messageCount === 0 && !pending) return null;
+  return { behavior: reduceMotion ? "auto" : "smooth", block: "end" };
+}
+
 export function MessageList({ messages, pending, onRetry }: MessageListProps) {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const scroll = newestEntryScroll(messages.length, pending, reduceMotion);
+    if (scroll) endRef.current?.scrollIntoView(scroll);
   }, [messages.length, pending]);
 
   return (
