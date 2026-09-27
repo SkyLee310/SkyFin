@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { cn } from "cn";
 import {
   Category,
   listCategories,
@@ -8,13 +9,13 @@ import {
   renameCategory,
   archiveCategory,
 } from "@/actions/categories";
+import { Input } from "@/components/ui/input";
 import {
   Plus,
   Edit2,
   Archive,
   Check,
   X,
-  Layers,
   Lock,
 } from "lucide-react";
 
@@ -106,215 +107,203 @@ export function CategorySettings() {
   const archivedCategories = categories.filter((c) => c.archived);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-2.5 pt-3">
       {/* Notice Banner */}
       {message && (
         <div
-          className={`p-3 mb-4 rounded-xl text-xs font-semibold flex items-center justify-between ${
-            message.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-rose-50 text-rose-800 border border-rose-200"
-          }`}
+          className={cn(
+            "flex items-center gap-2 rounded-2xl py-1 pr-1 pl-3.5 text-sm font-semibold",
+            message.type === "success" ? "bg-brand-soft text-brand" : "bg-danger-soft text-danger",
+          )}
         >
-          <span>{message.text}</span>
-          <button type="button" onClick={() => setMessage(null)}>
-            <X className="w-3.5 h-3.5" />
+          <span className="min-w-0 flex-1 py-2">{message.text}</span>
+          <button
+            type="button"
+            onClick={() => setMessage(null)}
+            className="flex size-11 flex-shrink-0 items-center justify-center rounded-full"
+            aria-label="Dismiss"
+          >
+            <X aria-hidden className="size-4" />
           </button>
         </div>
       )}
 
       {/* Category Management Section */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-slate-500" />
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Categories
-            </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="px-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Categories</h2>
+
+        <button
+          type="button"
+          id="btn-add-category-settings"
+          onClick={() => setIsAdding((prev) => !prev)}
+          aria-expanded={isAdding}
+          className="-mr-3 flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand"
+        >
+          {isAdding ? <X aria-hidden className="size-4" /> : <Plus aria-hidden className="size-4" strokeWidth={2.5} />}
+          <span>{isAdding ? "Cancel" : "Add Custom"}</span>
+        </button>
+      </div>
+
+      {/* Add Category Form */}
+      {isAdding && (
+        <form onSubmit={handleCreate} className="flex flex-col gap-3 rounded-[22px] bg-surface p-4 text-ink shadow-card">
+          <h3 className="px-1 text-sm font-bold tracking-tight">Add New Category</h3>
+          <div className="grid grid-cols-2 gap-1 rounded-full bg-sunken p-1">
+            <button
+              type="button"
+              onClick={() => setNewCatKind("expense")}
+              aria-pressed={newCatKind === "expense"}
+              className={cn(
+                "min-h-11 rounded-full text-sm font-semibold",
+                newCatKind === "expense" ? "bg-ink text-canvas" : "text-ink-muted",
+              )}
+            >
+              Expense
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewCatKind("income")}
+              aria-pressed={newCatKind === "income"}
+              className={cn(
+                "min-h-11 rounded-full text-sm font-semibold",
+                newCatKind === "income" ? "bg-ink text-canvas" : "text-ink-muted",
+              )}
+            >
+              Income
+            </button>
           </div>
 
-          <button
-            type="button"
-            id="btn-add-category-settings"
-            onClick={() => setIsAdding((prev) => !prev)}
-            className="text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all flex items-center gap-1 min-h-[44px]"
-          >
-            <Plus className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{isAdding ? "Cancel" : "Add Custom"}</span>
-          </button>
-        </div>
+          <div className="flex gap-2">
+            <Input
+              id="input-category-name"
+              type="text"
+              placeholder="Category name (e.g. Printing, Mamak)"
+              aria-label="Category name"
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+              maxLength={40}
+              className="flex-1"
+              autoFocus
+            />
+            <button
+              type="submit"
+              id="btn-save-category"
+              disabled={!newCatName.trim()}
+              className="flex min-h-12 min-w-16 items-center justify-center rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground disabled:opacity-40"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      )}
 
-        {/* Add Category Form */}
-        {isAdding && (
-          <form
-            onSubmit={handleCreate}
-            className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-3"
-          >
-            <h3 className="text-xs font-bold text-slate-800">Add New Category</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setNewCatKind("expense")}
-                className={`min-h-[44px] py-2 text-xs font-semibold rounded-lg border ${
-                  newCatKind === "expense"
-                    ? "bg-white text-slate-900 border-slate-900 shadow-sm"
-                    : "bg-transparent text-slate-600 border-slate-200"
-                }`}
-              >
-                Expense
-              </button>
-              <button
-                type="button"
-                onClick={() => setNewCatKind("income")}
-                className={`min-h-[44px] py-2 text-xs font-semibold rounded-lg border ${
-                  newCatKind === "income"
-                    ? "bg-white text-emerald-700 border-emerald-600 shadow-sm"
-                    : "bg-transparent text-slate-600 border-slate-200"
-                }`}
-              >
-                Income
-              </button>
-            </div>
+      {/* Active Categories List */}
+      <div className="divide-y divide-line overflow-hidden rounded-[22px] bg-surface text-ink shadow-card">
+        {isLoading ? (
+          <div className="p-4 text-center text-sm text-ink-muted">Loading categories...</div>
+        ) : (
+          activeCategories.map((cat) => {
+            const isEditing = editingId === cat.id;
+            return (
+              <div key={cat.id} className="flex min-h-14 items-center gap-3 py-1.5 pr-1.5 pl-4">
+                {cat.is_preset ? (
+                  <span
+                    className="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-sunken text-ink-subtle"
+                    title="Preset category"
+                  >
+                    <Lock aria-hidden className="size-3.5" />
+                  </span>
+                ) : (
+                  <span className="flex size-8 flex-shrink-0 items-center justify-center">
+                    <span className="size-2 rounded-full bg-brand" />
+                  </span>
+                )}
 
-            <div className="flex gap-2">
-              <input
-                id="input-category-name"
-                type="text"
-                placeholder="Category name (e.g. Printing, Mamak)"
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                maxLength={40}
-                className="flex-1 min-h-[44px] px-3 py-2 text-base bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                autoFocus
-              />
-              <button
-                type="submit"
-                id="btn-save-category"
-                disabled={!newCatName.trim()}
-                className="px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 min-h-[44px]"
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        )}
+                {isEditing ? (
+                  <Input
+                    type="text"
+                    aria-label="New category name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="h-11 flex-1"
+                    maxLength={40}
+                    autoFocus
+                  />
+                ) : (
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate text-sm font-semibold">{cat.name}</span>
+                    <span className="flex-shrink-0 rounded-full bg-sunken px-2 py-0.5 text-xs font-medium text-ink-muted capitalize">
+                      {cat.kind}
+                    </span>
+                  </div>
+                )}
 
-        {/* Active Categories List */}
-        <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 shadow-sm overflow-hidden">
-          {isLoading ? (
-            <div className="p-4 text-center text-xs text-slate-400">
-              Loading categories...
-            </div>
-          ) : (
-            activeCategories.map((cat) => {
-              const isEditing = editingId === cat.id;
-              return (
-                <div
-                  key={cat.id}
-                  className="flex items-center justify-between p-3.5 hover:bg-slate-50/60 transition-colors"
-                >
-                  <div className="flex items-center gap-2.5 flex-1 mr-2">
-                    {cat.is_preset ? (
-                      <span className="p-1 rounded bg-slate-100 text-slate-400" title="Preset category">
-                        <Lock className="w-3.5 h-3.5" />
-                      </span>
-                    ) : (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    )}
-
+                {/* Actions for custom categories */}
+                {!cat.is_preset && (
+                  <div className="flex flex-shrink-0 items-center">
                     {isEditing ? (
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="min-h-[44px] px-2 py-1 text-base bg-slate-50 border border-slate-300 rounded-lg flex-1 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        maxLength={40}
-                        autoFocus
-                      />
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveRename(cat.id)}
+                          className="flex size-11 items-center justify-center rounded-full text-brand"
+                          aria-label="Save rename"
+                        >
+                          <Check aria-hidden className="size-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="flex size-11 items-center justify-center rounded-full text-ink-muted"
+                          aria-label="Cancel rename"
+                        >
+                          <X aria-hidden className="size-5" />
+                        </button>
+                      </>
                     ) : (
-                      <div>
-                        <span className="text-sm font-semibold text-slate-800">
-                          {cat.name}
-                        </span>
-                        <span className="text-[10px] ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
-                          {cat.kind}
-                        </span>
-                      </div>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleStartRename(cat)}
+                          className="flex size-11 items-center justify-center rounded-full text-ink-muted"
+                          aria-label="Rename category"
+                        >
+                          <Edit2 aria-hidden className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleArchive(cat.id, cat.name)}
+                          className="flex size-11 items-center justify-center rounded-full text-ink-muted"
+                          aria-label="Archive category"
+                        >
+                          <Archive aria-hidden className="size-4" />
+                        </button>
+                      </>
                     )}
                   </div>
-
-                  {/* Actions for custom categories */}
-                  {!cat.is_preset && (
-                    <div className="flex items-center gap-1">
-                      {isEditing ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleSaveRename(cat.id)}
-                            className="w-11 h-11 rounded-lg flex items-center justify-center text-emerald-600 hover:bg-emerald-50"
-                            aria-label="Save rename"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                            className="w-11 h-11 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100"
-                            aria-label="Cancel rename"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleStartRename(cat)}
-                            className="w-11 h-11 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                            aria-label="Rename category"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleArchive(cat.id, cat.name)}
-                            className="w-11 h-11 rounded-lg flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50"
-                            aria-label="Archive category"
-                          >
-                            <Archive className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Archived Categories List */}
-        {archivedCategories.length > 0 && (
-          <div className="mt-4 flex flex-col gap-2">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Archived Categories ({archivedCategories.length})
-            </h3>
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden">
-              {archivedCategories.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between p-3 text-xs text-slate-500"
-                >
-                  <span className="line-through">{c.name}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 text-slate-600">
-                    Archived
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
+
+      {/* Archived Categories List */}
+      {archivedCategories.length > 0 && (
+        <>
+          <h3 className="mt-2 px-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+            Archived Categories ({archivedCategories.length})
+          </h3>
+          <div className="divide-y divide-line overflow-hidden rounded-[22px] bg-sunken">
+            {archivedCategories.map((c) => (
+              <div key={c.id} className="flex min-h-12 items-center justify-between gap-3 px-4 text-sm text-ink-muted">
+                <span className="truncate line-through">{c.name}</span>
+                <span className="flex-shrink-0 rounded-full bg-surface px-2 py-0.5 text-xs font-medium">Archived</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -13,9 +13,12 @@ export default async function ReportPage({ params }: PageProps<"/audit/[id]">) {
   if (!report) notFound();
 
   return (
-    <div className="flex flex-col gap-4 min-h-screen p-4">
-      <Link href="/audit" className="self-start flex items-center gap-1 min-h-[44px] text-sm font-semibold text-slate-600">
-        <ChevronLeft className="w-4 h-4" aria-hidden /> AI Audit
+    <div className="flex flex-col gap-4 p-4">
+      <Link
+        href="/audit"
+        className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-full pr-3 text-sm font-semibold text-ink-muted"
+      >
+        <ChevronLeft aria-hidden className="size-5" /> AI Audit
       </Link>
       <ReportView content={report.content} />
       <MarkRead id={report.id} read={report.read} />
