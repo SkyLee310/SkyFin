@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 
 interface NeedsWantsToggleProps {
   isEssential: boolean;
@@ -8,33 +8,33 @@ interface NeedsWantsToggleProps {
 }
 
 export function NeedsWantsToggle({ isEssential, onChange }: NeedsWantsToggleProps) {
+  const labelId = useId();
+  const option = (selected: boolean) =>
+    `min-h-11 rounded-full px-2 text-sm leading-tight font-semibold ${
+      selected ? "bg-ink text-canvas" : "text-ink-muted"
+    }`;
+
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+      <span id={labelId} className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
         Classification
-      </label>
-      <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+      </span>
+      <div role="group" aria-labelledby={labelId} className="grid grid-cols-2 gap-1 rounded-full bg-sunken p-1">
         <button
           type="button"
           id="toggle-needs"
+          aria-pressed={isEssential}
           onClick={() => onChange(true)}
-          className={`min-h-[44px] flex items-center justify-center font-medium text-sm rounded-lg transition-all ${
-            isEssential
-              ? "bg-white text-emerald-700 shadow-sm font-semibold"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
+          className={option(isEssential)}
         >
           Needs (Essential)
         </button>
         <button
           type="button"
           id="toggle-wants"
+          aria-pressed={!isEssential}
           onClick={() => onChange(false)}
-          className={`min-h-[44px] flex items-center justify-center font-medium text-sm rounded-lg transition-all ${
-            !isEssential
-              ? "bg-white text-amber-700 shadow-sm font-semibold"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
+          className={option(!isEssential)}
         >
           Wants (Discretionary)
         </button>

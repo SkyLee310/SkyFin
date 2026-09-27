@@ -36,12 +36,16 @@ export function AmountInput({ amountSen, onChange, error, label = "Amount", high
   };
 
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor="confirmation-amount-input"
+        className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted"
+      >
         {label}
       </label>
+      {/* The amount is the card's headline: a large figure on a sunken well. */}
       <div className="relative flex items-center">
-        <span className="absolute left-3 text-2xl font-bold text-slate-400">
+        <span className="pointer-events-none absolute left-4 text-2xl font-bold text-ink-muted">
           RM
         </span>
         <input
@@ -53,13 +57,17 @@ export function AmountInput({ amountSen, onChange, error, label = "Amount", high
           placeholder="0.00"
           aria-invalid={highlight || undefined}
           data-highlight={highlight ? "low-confidence" : undefined}
-          className={`w-full pl-14 pr-4 py-3 text-3xl font-extrabold tracking-tight border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-slate-900 ${
-            highlight ? "bg-amber-50 border-amber-400" : "bg-slate-50 border-slate-200"
+          className={`h-16 w-full rounded-2xl border pr-4 pl-16 text-3xl font-bold tracking-tight text-ink tabular-nums outline-none placeholder:text-ink-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/25 ${
+            highlight ? "border-caution bg-caution-soft" : "border-transparent bg-sunken"
           }`}
         />
       </div>
-      {highlight && <span className="text-xs font-semibold text-amber-700 mt-0.5">Please double-check</span>}
-      {error && <span className="text-xs text-rose-500 mt-0.5">{error}</span>}
+      {highlight && <span className="text-xs font-semibold text-caution">Please double-check</span>}
+      {error && (
+        <span role="alert" className="text-xs font-medium text-danger">
+          {error}
+        </span>
+      )}
     </div>
   );
 }

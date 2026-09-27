@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { Category, createCategory } from "@/actions/categories";
-import { Plus, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, Plus, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface CategorySelectorProps {
   categories: Category[];
@@ -57,33 +58,35 @@ export function CategorySelector({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-          Category <span className="text-rose-500">*</span>
+        <label
+          htmlFor="category-selector-dropdown"
+          className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted"
+        >
+          Category <span className="text-danger">*</span>
         </label>
         <button
           type="button"
           id="btn-open-add-category"
+          aria-expanded={isAddingNew}
           onClick={() => setIsAddingNew((prev) => !prev)}
-          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 min-h-[44px] px-2"
+          className="-my-2 -mr-3 flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand"
         >
-          <Plus className="w-3.5 h-3.5" />
+          {isAddingNew ? <X aria-hidden className="size-4" /> : <Plus aria-hidden className="size-4" />}
           <span>{isAddingNew ? "Cancel" : "Add custom"}</span>
         </button>
       </div>
 
       {isAddingNew && (
-        <form
-          onSubmit={handleCreate}
-          className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex flex-col gap-2 mb-1"
-        >
+        <form onSubmit={handleCreate} className="mb-1 flex flex-col gap-1 rounded-2xl bg-sunken p-2.5">
           <div className="flex gap-2">
-            <input
+            <Input
               id="new-category-name-input"
               type="text"
+              aria-label="New category name"
               placeholder="e.g. Printing, Mamak"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
-              className="flex-1 min-h-[44px] px-3 py-2 text-base bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="h-11 flex-1 bg-surface"
               maxLength={40}
               autoFocus
             />
@@ -91,23 +94,27 @@ export function CategorySelector({
               type="submit"
               id="btn-submit-new-category"
               disabled={isSubmitting || !newCatName.trim()}
-              className="px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-1"
+              className="flex min-h-11 min-w-16 items-center justify-center rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground disabled:opacity-40"
             >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+              {isSubmitting ? <Loader2 aria-hidden className="size-4 animate-spin" /> : "Save"}
             </button>
           </div>
           {kind === "expense" && (
-            <label className="flex items-center gap-2 min-h-[44px] text-xs text-slate-600 cursor-pointer">
+            <label className="flex min-h-11 items-center gap-2.5 px-1 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={newCatEssential}
                 onChange={(e) => setNewCatEssential(e.target.checked)}
-                className="w-5 h-5 rounded border-slate-300 accent-emerald-600 focus:ring-emerald-500"
+                className="size-5 flex-shrink-0 accent-brand"
               />
               <span>Default as Essential (Needs)</span>
             </label>
           )}
-          {submitError && <span className="text-xs text-rose-600">{submitError}</span>}
+          {submitError && (
+            <span role="alert" className="px-1 text-xs font-medium text-danger">
+              {submitError}
+            </span>
+          )}
         </form>
       )}
 
@@ -119,7 +126,7 @@ export function CategorySelector({
             const found = filtered.find((c) => c.id === e.target.value);
             if (found) onSelect(found);
           }}
-          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-base font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+          className="h-12 w-full appearance-none rounded-xl border border-transparent bg-sunken pr-10 pl-3.5 text-base font-medium text-ink outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/25"
         >
           <option value="" disabled>
             Select a category...
@@ -130,9 +137,17 @@ export function CategorySelector({
             </option>
           ))}
         </select>
+        <ChevronDown
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 right-3.5 size-5 -translate-y-1/2 text-ink-muted"
+        />
       </div>
 
-      {error && <span className="text-xs text-rose-500">{error}</span>}
+      {error && (
+        <span role="alert" className="text-xs font-medium text-danger">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
