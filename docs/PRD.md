@@ -244,7 +244,7 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D36 | Receipt group id | Every receipt entry gets a `receipt_group_id`, split or not, so History can show "Image expired" after the sweep |
 | D37 | Service worker build | `@serwist/turbopack` (Next 16 builds with Turbopack), served at `/serwist/sw.js` with scope `/`; caches static assets only, never pages or data |
 | D38 | Audit tab badge | Counts unread weekly and monthly reports; budget warnings are read and dismissed in the banner |
-| D39 | Visual style | LedgerUI look (Sky, 2026-09-26): cream canvas, white cards, forest green the only strong colour, a dark floating tab bar. Components colour with the semantic tokens in `globals.css` (light and dark), never Tailwind palette classes |
+| D39 | Visual style | LedgerUI look (Sky, 2026-09-26): cream canvas, white cards, forest green the only strong colour, a dark floating tab bar (frosted glass, with a capsule that slides to a tapped tab: Sky, 2026-09-27). Components colour with the semantic tokens in `globals.css` (light and dark), never Tailwind palette classes |
 
 ---
 
@@ -369,7 +369,7 @@ Four tabs in a floating tab bar above the home indicator, one-thumb use on iPhon
 5. Payment method breakdown: Cash vs eWallet vs Card, stacked bar with RM and %.
 6. Needs vs Wants bar with last month's Wants % as a marker.
 
-**Look (D39):** a warm cream canvas with white rounded cards and soft shadows. Forest green is the only strong colour in the chrome: primary buttons, the progress bar, "On track", income, Needs. Amber and red flag spending and budget trouble: Wants, expenses, the progress bar past 60% and 85%, the pace note, warnings. Blue and violet mark the info and spike warnings; charts use seven muted earth tones in a fixed order. Titles are large and bold in the system font (SF Pro, PingFang for Chinese), section labels small and uppercase, and big amounts set the RM and sen smaller. The tab bar is a near-black pill with the current tab in a light capsule. Dark mode swaps to a near-black canvas with a light green accent.
+**Look (D39):** a warm cream canvas with white rounded cards and soft shadows. Forest green is the only strong colour in the chrome: primary buttons, the progress bar, "On track", income, Needs. Amber and red flag spending and budget trouble: Wants, expenses, the progress bar past 60% and 85%, the pace note, warnings. Blue and violet mark the info and spike warnings; charts use seven muted earth tones in a fixed order. Titles are large and bold in the system font (SF Pro, PingFang for Chinese), section labels small and uppercase, and big amounts set the RM and sen smaller. The tab bar is a pill of near-black frosted glass: solid where the browser can't blur, or when the system asks for less transparency or more contrast. A light capsule marks the current tab and slides to a tapped tab the moment it is tapped, before the page arrives (it jumps under Reduce Motion). Dark mode swaps to a near-black canvas with a light green accent.
 
 **Rules:** tap targets ≥ 44 px; charts are tap-to-show, never hover; the Confirmation Card is a bottom sheet with Save pinned above the keyboard; amounts display as `RM 1,234.50`; dark mode follows the system; text clears WCAG 4.5:1 contrast in both modes.
 
