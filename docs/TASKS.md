@@ -249,11 +249,11 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 
 ## M8 — LedgerUI restyle (Owner: Claude)
 
-> **Status (2026-09-27):** Started 2026-09-26 at Sky's request, before the M1 and M5–M7 real-device demos, on branch `m8-ledger-ui` (D39). UI only: no schema, Server Action or data change, and E2E ids, texts and roles stay the same. Every screen is restyled. Lint and typecheck pass; `npm test` passes except the two `check-client-bundle` cases, which fail on Windows before M8 too. Open: M8.11 on the real iPhone.
+> **Status (2026-09-27):** Started 2026-09-26 at Sky's request, before the M1 and M5–M7 real-device demos, on branch `m8-ledger-ui` (D39). UI only: no schema, Server Action or data change, and E2E ids, texts and roles stay the same. Every screen is restyled, and M8.12 (Sky, 2026-09-27, branch `m8-tabbar-glass`) frosts the tab bar and slides its capsule. Lint and typecheck pass; `npm test` passes except the two `check-client-bundle` cases, which fail on Windows before M8 too. Open: M8.11 on the real iPhone.
 >
-> **E2E (Windows, local stack, 2026-09-27):** the specs are unchanged. With 6 workers the suite fails 24 of 58, against 25 of 58 on the pre-M8 commit `eada9f2`: 22 are the same tests, and the others on either side are load flakes that pass with 1 worker. The first test in each worker can also hit `PGRST303 JWT issued at future` (clock skew). With 1 worker every failure is older than M8 and fails on `eada9f2` too: a `fill` before React hydrates is lost on the dev server (the m3 chat tests and `touch.spec.ts`, which pass with a retry); on a Sunday the cron also writes the weekly audit and sends a second push (m6 F11-1, the evening push, F11-2); the uncommitted local `0003_ai_usage_lockdown` refuses the tests' direct `ai_usage` insert (the m3 and m4 daily-cap tests); WebKit on Windows has no `Notification` (m6 F15-2); and the m4 History split-delete test is flaky (1 failure in 15 runs).
+> **E2E (Windows, local stack, 2026-09-27):** the specs are unchanged. With 6 workers the suite fails 24 of 58, against 25 of 58 on the pre-M8 commit `eada9f2`: 22 are the same tests, and the others on either side are load flakes that pass with 1 worker. The first test in each worker can also hit `PGRST303 JWT issued at future` (clock skew). With 1 worker every failure is older than M8 and fails on `eada9f2` too: a `fill` before React hydrates is lost on the dev server (the m3 chat tests and `touch.spec.ts`; a retry passes them on some runs, not all); on a Sunday the cron also writes the weekly audit and sends a second push (m6 F11-1, the evening push, F11-2); the uncommitted local `0003_ai_usage_lockdown` refuses the tests' direct `ai_usage` insert (the m3 and m4 daily-cap tests); WebKit on Windows has no `Notification` (m6 F15-2); and the m4 History split-delete test is flaky (1 failure in 15 runs).
 
-**Demo:** On the iPhone, in light and then dark mode: the Dashboard shows a cream canvas (near-black in dark) with white cards and a green progress bar; the dark tab bar floats above the home indicator. Log "nasi lemak 8.50" → the Confirmation Card matches the look → save → History lists it under "Today". Overspend → a tinted warning card. Remove and re-add the Home Screen icon → the green "S".
+**Demo:** On the iPhone, in light and then dark mode: the Dashboard shows a cream canvas (near-black in dark) with white cards and a green progress bar; the dark frosted tab bar floats above the home indicator, and its light capsule slides to a tapped tab before the page changes. Log "nasi lemak 8.50" → the Confirmation Card matches the look → save → History lists it under "Today". Overspend → a tinted warning card. Remove and re-add the Home Screen icon → the green "S".
 
 **UI**
 - [x] M8.1 Tokens (D39): `globals.css` semantic colours (canvas, surface, sunken, ink, line, brand, caution, danger, info, spike, nav, chart-1…7) in light and dark, card shadows, tab-bar clearance; `themeColor` in the root `layout.tsx` and `manifest.ts` colours follow the canvas.
@@ -265,10 +265,11 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [x] M8.7 AI Audit: report list, report view, category settings.
 - [x] M8.8 Warning and budget-applied banners, onboarding, login, offline page (with a "Try again" link: the Home Screen app has no pull-to-refresh).
 - [x] M8.9 App icons: a cream "S" on forest green, same sizes and masks.
+- [x] M8.12 Tab bar (Sky, 2026-09-27): dark frosted glass whose tint alone keeps the labels 4.5:1 over white, solid where `backdrop-filter` is missing or the system asks for less transparency or more contrast; the light capsule slides to a tapped tab while its page loads (`useLinkStatus`) and jumps under Reduce Motion. `bottom-nav` unit tests and `m8-tab-bar.spec.ts`; the m3 chat tests still lose their pre-hydration `fill` (note above), the same on `main`.
 
 **Test**
 - [x] M8.10 No Tailwind palette class left in `src/`; text pairs clear 4.5:1 in both modes; `dayLabelMYT` unit tests; E2E specs unchanged, and every failure left with 1 worker also fails before M8 (E2E note above).
-- [ ] M8.11 Real iPhone, light and dark: every tab, the Confirmation Card, the tab bar clear of the home indicator, the new Home Screen icon.
+- [ ] M8.11 Real iPhone, light and dark: every tab, the Confirmation Card, the tab bar clear of the home indicator (its glass, and the capsule sliding on a tap), the new Home Screen icon.
 
 **Done when:** demo passes on a real iPhone in light and dark mode.
 

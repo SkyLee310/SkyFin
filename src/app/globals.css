@@ -18,7 +18,8 @@
  *
  * Contrast (WCAG): ink and ink-muted clear 4.5:1 on canvas, surface and sunken in
  * both schemes; each status colour clears 4.5:1 on its -soft tint and on surface;
- * chart colours clear 3:1 on surface. ink-subtle is for icons and hairlines only.
+ * chart colours clear 3:1 on surface. ink-subtle is for icons and hairlines only. The
+ * glass tab bar's labels clear 4.5:1 on its tint alone (see .tab-bar below).
  */
 
 @theme inline {
@@ -39,6 +40,7 @@
   --color-nav-muted: var(--nav-muted);
   --color-nav-active: var(--nav-active);
   --color-nav-active-foreground: var(--nav-active-foreground);
+  --color-nav-glass-muted: var(--nav-glass-muted);
   --color-caution: var(--caution);
   --color-caution-soft: var(--caution-soft);
   --color-danger: var(--danger);
@@ -109,6 +111,10 @@
   --nav-muted: #a9a497;
   --nav-active: #f4f1ea;
   --nav-active-foreground: #1c1b18;
+  /* The glass tab bar (.tab-bar): --nav at 78% over a blurred, darkened page. */
+  --nav-glass: rgb(28 27 24 / 0.78);
+  --nav-glass-muted: #cfcabe;
+  --nav-glass-filter: blur(20px) saturate(180%) brightness(0.6);
   --caution: #8a5a00;
   --caution-soft: #f8eed8;
   --danger: #b23a2f;
@@ -132,6 +138,10 @@
 
   --card-shadow: 0 1px 2px rgb(60 52 38 / 0.05), 0 8px 24px -12px rgb(60 52 38 / 0.14);
   --float-shadow: 0 12px 32px -8px rgb(28 27 24 / 0.35);
+  /* The float shadow plus a faint inner edge and top highlight, which read as glass. */
+  --nav-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 0 0 1px rgb(255 255 255 / 0.06),
+    0 12px 32px -8px rgb(28 27 24 / 0.35);
 
   /* The floating tab bar: a 64px pill that sits just above the home indicator. */
   --nav-height: 4rem;
@@ -175,6 +185,9 @@
     --nav-muted: #aba69a;
     --nav-active: #f2efe7;
     --nav-active-foreground: #12130f;
+    --nav-glass: rgb(46 47 40 / 0.84);
+    --nav-glass-muted: #cfcabf;
+    --nav-glass-filter: blur(20px) saturate(180%) brightness(0.85);
     --caution: #e9c06a;
     --caution-soft: #352a12;
     --danger: #f0998f;
@@ -196,6 +209,9 @@
 
     --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
     --float-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+    --nav-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 255 255 / 0.08),
+      0 12px 32px -8px rgb(0 0 0 / 0.6);
   }
 }
 
@@ -234,6 +250,63 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * The floating tab bar (components/nav/bottom-nav.tsx) is dark frosted glass: a
+ * translucent --nav tint over the page, which backdrop-filter blurs, saturates and
+ * darkens. The labels clear 4.5:1 on the tint alone, over a white page with no blur, so
+ * they stay readable in an engine that skips the filter. Where backdrop-filter is
+ * unsupported, or iOS asks for less transparency or more contrast, the bar is solid --nav.
+ *
+ * The light capsule slides to a tapped tab (M8.12). --tab, set inline, is the tab whose
+ * page is showing; a link whose navigation is pending holds a [data-pending] marker, which
+ * moves the capsule at once instead of when the next page arrives. The capsule is a window
+ * onto a strip of active-styled copies of the four tabs: the strip moves the opposite way,
+ * so each copy stays over its tab and the colours change exactly at the capsule's edge.
+ */
+@layer components {
+  .tab-bar {
+    --tab-shown: var(--tab);
+    background-color: var(--nav-glass);
+    box-shadow: var(--nav-shadow);
+    -webkit-backdrop-filter: var(--nav-glass-filter);
+    backdrop-filter: var(--nav-glass-filter);
+  }
+  .tab-bar:has([data-tab="0"] [data-pending]) {
+    --tab-shown: 0;
+  }
+  .tab-bar:has([data-tab="1"] [data-pending]) {
+    --tab-shown: 1;
+  }
+  .tab-bar:has([data-tab="2"] [data-pending]) {
+    --tab-shown: 2;
+  }
+  .tab-bar:has([data-tab="3"] [data-pending]) {
+    --tab-shown: 3;
+  }
+  .tab-pill,
+  .tab-strip {
+    transition: transform 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .tab-pill {
+    transform: translateX(calc(var(--tab-shown) * 100%));
+  }
+  .tab-strip {
+    transform: translateX(calc(var(--tab-shown) * -25%));
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .tab-bar {
+      background-color: var(--nav);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    .tab-bar {
+      background-color: var(--nav);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
   }
 }
 
