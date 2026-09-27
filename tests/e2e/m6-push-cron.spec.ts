@@ -32,6 +32,12 @@ async function subscribe(path = `/sub/${randomUUID()}`) {
   return endpoint;
 }
 
+// The same run also pushes the weekly audit on a Sunday and the monthly review on the month's
+// last day (M7), so the warning tests look only at the budget-warning push.
+function warningPushes() {
+  return push.received.filter((p) => p.payload.tag === "budget-warning");
+}
+
 test("M6.12: the cron route answers 401 without the exact bearer token", async ({ baseURL }) => {
   expect((await runCron(baseURL!, {}, "")).status).toBe(401);
   expect((await runCron(baseURL!, {}, "wrong-token")).status).toBe(401);
@@ -46,12 +52,12 @@ test("F11-1, M6.13: crossing 80% during the day gives one push that evening; a s
 
   const first = await runCron(baseURL!, { user: user.userId });
   expect(first.status).toBe(200);
-  expect(push.received).toHaveLength(1);
+  expect(warningPushes()).toHaveLength(1);
 
   // The push carries the most severe new warning, in the user's language, and opens the Dashboard.
   const input = { budgetSen: 80000, spentSen: 66000, spentExcludedSen: 0, today: todayMYT() };
   const result = evaluatePace(input);
-  expect(push.received[0]!.payload).toEqual({
+  expect(warningPushes()[0]!.payload).toEqual({
     title: "SkyFin budget alert",
     body: warningMessage(result.warnings[0]!, result, input, "en"),
     url: "/",
@@ -60,7 +66,7 @@ test("F11-1, M6.13: crossing 80% during the day gives one push that evening; a s
 
   const second = await runCron(baseURL!, { user: user.userId });
   expect(second.status).toBe(200);
-  expect(push.received).toHaveLength(1);
+  expect(warningPushes()).toHaveLength(1);
 });
 
 test("a warning raised in the app during the day is pushed once that evening", async ({
@@ -78,16 +84,16 @@ test("a warning raised in the app during the day is pushed once that evening", a
   await expect(page.locator("#warning-banner")).toHaveAttribute("data-level", "spike");
 
   await runCron(baseURL!, { user: user.userId });
-  expect(push.received.map((p) => p.payload.body)).toEqual([
+  expect(warningPushes().map((p) => p.payload.body)).toEqual([
     "RM 200.00 at Shopee is 25% of this month's budget. Is this a one-off purchase?",
   ]);
 
   // Tapping the notification opens the Dashboard, where the banner is waiting.
-  await page.goto(push.received[0]!.payload.url);
+  await page.goto(warningPushes()[0]!.payload.url);
   await expect(page.locator("#warning-banner")).toHaveAttribute("data-level", "spike");
 
   await runCron(baseURL!, { user: user.userId });
-  expect(push.received).toHaveLength(1);
+  expect(warningPushes()).toHaveLength(1);
 });
 
 test("F11-2: a 410 from the push service deletes the dead subscription", async ({ baseURL }) => {
@@ -96,7 +102,7 @@ test("F11-2: a 410 from the push service deletes the dead subscription", async (
   await insertRows(user, [{ amountSen: 66000, category: "Rent & Utilities" }]);
 
   await runCron(baseURL!, { user: user.userId });
-  expect(push.received).toHaveLength(1);
+  expect(warningPushes()).toHaveLength(1);
   const { data } = await user.supabase.from("push_subscriptions").select("endpoint");
   expect(data!.map((r) => r.endpoint)).toEqual([live]);
   expect(dead).not.toEqual(live);
