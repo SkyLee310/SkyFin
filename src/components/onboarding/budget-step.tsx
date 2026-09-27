@@ -55,17 +55,17 @@ export function BudgetStep({ currentBudgetSen, defaultOpen = false, trigger }: B
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-      <SheetContent side="bottom" className="rounded-t-[28px]">
-        <SheetHeader>
-          <SheetTitle className="text-lg font-bold">
+      <SheetContent side="bottom">
+        <SheetHeader className="px-5 pt-6">
+          <SheetTitle className="text-xl font-bold tracking-tight">
             {currentBudgetSen > 0 ? "Edit monthly budget" : "Set your monthly budget"}
           </SheetTitle>
           <SheetDescription>
             You can change this anytime — it applies to the rest of this month right away.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex flex-col gap-1.5 px-4">
-          <Label htmlFor="budget-input" className="text-xs uppercase tracking-wider text-muted-foreground">
+        <div className="flex flex-col gap-2 px-5">
+          <Label htmlFor="budget-input" className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
             Monthly budget (RM)
           </Label>
           <Input
@@ -75,7 +75,7 @@ export function BudgetStep({ currentBudgetSen, defaultOpen = false, trigger }: B
             value={value}
             onChange={(e) => setValue(e.target.value)}
             aria-invalid={error ? true : undefined}
-            className="rounded-xl"
+            className="text-lg font-semibold tabular-nums"
           />
           {error && (
             <p role="alert" className="text-sm text-destructive">
@@ -83,8 +83,8 @@ export function BudgetStep({ currentBudgetSen, defaultOpen = false, trigger }: B
             </p>
           )}
         </div>
-        <SheetFooter className="pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <Button size="lg" className="w-full rounded-xl text-base" onClick={save} disabled={pending}>
+        <SheetFooter className="px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <Button size="lg" className="w-full" onClick={save} disabled={pending}>
             {pending ? "Saving…" : "Save"}
           </Button>
         </SheetFooter>
