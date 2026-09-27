@@ -30,7 +30,8 @@ export default async function AppLayout({
           <WarningBanner warnings={shell.warnings} />
         </div>
       )}
-      <div className="flex-1 pb-20">{children}</div>
+      {/* Clears the floating tab bar, so the last card can scroll above it. */}
+      <div className="flex-1 pb-(--nav-clearance)">{children}</div>
       <BottomNav unreadAudits={shell.unreadAudits} />
       <BudgetStep currentBudgetSen={profile.budgetSen} defaultOpen={profile.budgetSen === 0} />
       <PushResubscribe />
