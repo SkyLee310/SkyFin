@@ -16,60 +16,77 @@ export default async function AuditPage() {
   const [latest, ...past] = reports;
 
   return (
-    <div className="flex flex-col gap-5 min-h-screen p-4">
-      <div className="pb-3 border-b border-slate-100">
-        <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">AI Audit</h1>
-        <p className="text-xs text-slate-500">Weekly audits, monthly reviews and settings</p>
-      </div>
+    <div className="flex flex-col gap-4 p-4">
+      <header className="pt-2 pb-1">
+        <h1 className="text-[1.625rem] font-bold tracking-tight text-ink">AI Audit</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          Weekly audits, monthly reviews and settings
+        </p>
+      </header>
 
       {latest ? (
         <Link
           href={`/audit/${latest.id}`}
           id="latest-report"
-          className="block p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl shadow-sm"
+          className="block rounded-[22px] bg-brand p-5 text-brand-foreground shadow-card"
         >
-          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" aria-hidden />
-            Latest {latest.type === "weekly_audit" ? "weekly audit" : "monthly review"} ·{" "}
-            {formatPeriod(latest.periodStart, latest.periodEnd)}
-            {!latest.read && <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-600 text-white normal-case">New</span>}
-          </p>
-          <p className="text-base font-bold text-slate-900 mt-1.5 leading-snug">{latest.headline}</p>
-          <p className="text-xs font-semibold text-emerald-700 mt-3 flex items-center gap-1">
-            Read the report <ChevronRight className="w-3.5 h-3.5" aria-hidden />
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em]">
+              <Sparkles aria-hidden className="size-3.5 flex-shrink-0" />
+              Latest {latest.type === "weekly_audit" ? "weekly audit" : "monthly review"}
+            </p>
+            {!latest.read && (
+              <span className="flex-shrink-0 rounded-full bg-brand-foreground px-2.5 py-1 text-xs font-semibold text-brand">
+                New
+              </span>
+            )}
+          </div>
+          <p className="mt-3 text-lg leading-snug font-bold tracking-tight">{latest.headline}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+            <span className="font-medium">{formatPeriod(latest.periodStart, latest.periodEnd)}</span>
+            <span className="flex items-center gap-1 font-semibold">
+              Read the report <ChevronRight aria-hidden className="size-4" />
+            </span>
+          </div>
         </Link>
       ) : (
-        <div id="no-reports" className="p-5 bg-slate-50 border border-dashed border-slate-200 rounded-3xl text-center">
-          <Sparkles className="w-6 h-6 mx-auto text-emerald-600" aria-hidden />
-          <p className="text-sm font-bold text-slate-800 mt-2">Your first audit arrives on Sunday evening</p>
-          <p className="text-xs text-slate-500 mt-1">
+        <div
+          id="no-reports"
+          className="flex flex-col items-center rounded-[22px] bg-surface px-6 py-10 text-center text-ink shadow-card"
+        >
+          <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand">
+            <Sparkles aria-hidden className="size-5" />
+          </span>
+          <p className="mt-3 text-base font-bold tracking-tight">Your first audit arrives on Sunday evening</p>
+          <p className="mt-1 text-sm text-ink-muted">
             It names your money leaks and gives 3 tips. A monthly review follows on the last day of the month.
           </p>
         </div>
       )}
 
       {past.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Past reports</h2>
+        <section className="flex flex-col gap-2.5">
+          <h2 className="px-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Past reports</h2>
           <ReportList reports={past} />
         </section>
       )}
 
-      <section className="flex flex-col gap-3 pt-2">
-        <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Settings</h2>
+      <section className="flex flex-col gap-2.5 pt-2">
+        <h2 className="px-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Settings</h2>
         <BudgetStep
           currentBudgetSen={profile.budgetSen}
           trigger={
             <button
               type="button"
               id="btn-edit-budget-settings"
-              className="flex items-center gap-3 min-h-[56px] p-3.5 bg-white border border-slate-200 rounded-2xl shadow-sm text-left"
+              className="flex min-h-16 w-full items-center gap-3 rounded-[22px] bg-surface p-4 text-left text-ink shadow-card outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              <Wallet className="w-4 h-4 text-slate-500" aria-hidden />
-              <span className="flex-1 text-sm font-semibold text-slate-800">Monthly budget</span>
-              <span className="text-sm font-bold text-slate-900">{formatRM(profile.budgetSen)}</span>
-              <ChevronRight className="w-4 h-4 text-slate-300" aria-hidden />
+              <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-sunken text-ink-muted">
+                <Wallet aria-hidden className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1 text-sm font-semibold">Monthly budget</span>
+              <span className="text-sm font-bold tabular-nums">{formatRM(profile.budgetSen)}</span>
+              <ChevronRight aria-hidden className="size-5 flex-shrink-0 text-ink-subtle" />
             </button>
           }
         />

@@ -22,22 +22,27 @@ export function BudgetAppliedBanner({ notice, monthLabel }: { notice: BudgetAppl
     <div
       id="budget-applied-banner"
       role="status"
-      className="flex flex-col gap-2 p-3.5 border rounded-2xl shadow-sm bg-emerald-50 border-emerald-200 text-emerald-900"
+      className="flex flex-col gap-3 rounded-[22px] bg-brand-soft p-4 text-ink shadow-card"
     >
-      <div className="flex items-start gap-2.5">
-        <CalendarCheck className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden />
-        <p className="flex-1 text-sm font-medium leading-snug">
-          Your budget for {monthLabel} is now <strong>{formatRM(notice.budgetSen)}</strong>, from last month&apos;s
-          review.
-        </p>
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-surface text-brand">
+          <CalendarCheck aria-hidden className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand">New budget</p>
+          <p className="mt-1 text-sm leading-snug font-medium">
+            Your budget for {monthLabel} is now <strong className="font-bold">{formatRM(notice.budgetSen)}</strong>,
+            from last month&apos;s review.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => run(() => dismissBudgetApplied({ id: notice.reportId }))}
           disabled={pending}
           aria-label="Keep the new budget"
-          className="-m-2 w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full opacity-60 hover:opacity-100"
+          className="-mt-1.5 -mr-1.5 flex size-11 flex-shrink-0 items-center justify-center rounded-full text-ink-muted"
         >
-          <X className="w-4 h-4" />
+          <X aria-hidden className="size-4" />
         </button>
       </div>
       <button
@@ -45,12 +50,16 @@ export function BudgetAppliedBanner({ notice, monthLabel }: { notice: BudgetAppl
         id="btn-undo-budget"
         disabled={pending}
         onClick={() => run(() => restorePreviousBudget({ id: notice.reportId }))}
-        className="min-h-[44px] rounded-xl bg-white/80 border border-emerald-200 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink disabled:opacity-50"
       >
-        {pending && <Loader2 className="w-4 h-4 animate-spin" />}
+        {pending && <Loader2 aria-hidden className="size-4 animate-spin" />}
         Undo — go back to {formatRM(notice.previousBudgetSen)}
       </button>
-      {error && <p className="text-xs font-medium text-rose-700">{error}</p>}
+      {error && (
+        <p role="alert" className="px-1 text-xs font-semibold text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

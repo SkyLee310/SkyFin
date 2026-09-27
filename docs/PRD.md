@@ -4,7 +4,7 @@
 |---|---|
 | Owner | Sky |
 | Status | Approved for build (all open questions resolved) |
-| Last updated | 2026-09-25 |
+| Last updated | 2026-09-27 |
 | Related | [TECH_SPEC.md](./TECH_SPEC.md) · [TASKS.md](./TASKS.md) |
 
 SkyFin is a personal iPhone PWA that puts cash, eWallet and card spending in one place, logs an expense from one chat line or one receipt photo, and warns before the monthly budget runs out. Everything is in RM.
@@ -244,6 +244,7 @@ Milestones are vertical slices; see [TASKS.md](./TASKS.md).
 | D36 | Receipt group id | Every receipt entry gets a `receipt_group_id`, split or not, so History can show "Image expired" after the sweep |
 | D37 | Service worker build | `@serwist/turbopack` (Next 16 builds with Turbopack), served at `/serwist/sw.js` with scope `/`; caches static assets only, never pages or data |
 | D38 | Audit tab badge | Counts unread weekly and monthly reports; budget warnings are read and dismissed in the banner |
+| D39 | Visual style | LedgerUI look (Sky, 2026-09-26): cream canvas, white cards, forest green the only strong colour, a dark floating tab bar. Components colour with the semantic tokens in `globals.css` (light and dark), never Tailwind palette classes |
 
 ---
 
@@ -351,24 +352,26 @@ All numbers are computed before the model is called; the model writes words, not
 
 ## 9. UX
 
-Four tabs in a bottom nav, one-thumb use on iPhone, safe-area insets respected.
+Four tabs in a floating tab bar above the home indicator, one-thumb use on iPhone, safe-area insets respected.
 
 | Tab | Contents |
 |---|---|
 | Dashboard | Warning banner, budget card, net cash flow, category donut, payment-method bar, Needs vs Wants bar |
 | Chat/Log | Chat thread (session only), text input, camera and gallery buttons, "+" for manual entry |
-| History | Filterable list, grouped receipts, edit/delete/one-off toggle |
+| History | Filterable list grouped by day ("Today", "Yesterday", "Mon, 21 Sep"), grouped receipts, edit/delete/one-off toggle |
 | AI Audit | Latest report on top, past reports, budget and category settings |
 
 **Dashboard, top to bottom**
-1. Warning banner, dismissible, colour by level.
+1. Warning banner, dismissible, colour by level: a tinted card with the level's icon and label; the message stays in the body colour.
 2. Budget card: RM remaining of RM budget, progress bar, days left, projected out-of-cash date ("On track" if after month end).
 3. Net cash flow: Income − Expense this month, shown separately.
 4. Expense category donut; tap a slice to filter History.
 5. Payment method breakdown: Cash vs eWallet vs Card, stacked bar with RM and %.
 6. Needs vs Wants bar with last month's Wants % as a marker.
 
-**Rules:** tap targets ≥ 44 px; charts are tap-to-show, never hover; the Confirmation Card is a bottom sheet with Save pinned above the keyboard; amounts display as `RM 1,234.50`; dark mode follows the system.
+**Look (D39):** a warm cream canvas with white rounded cards and soft shadows. Forest green is the only strong colour in the chrome: primary buttons, the progress bar, "On track", income, Needs. Amber and red flag spending and budget trouble: Wants, expenses, the progress bar past 60% and 85%, the pace note, warnings. Blue and violet mark the info and spike warnings; charts use seven muted earth tones in a fixed order. Titles are large and bold in the system font (SF Pro, PingFang for Chinese), section labels small and uppercase, and big amounts set the RM and sen smaller. The tab bar is a near-black pill with the current tab in a light capsule. Dark mode swaps to a near-black canvas with a light green accent.
+
+**Rules:** tap targets ≥ 44 px; charts are tap-to-show, never hover; the Confirmation Card is a bottom sheet with Save pinned above the keyboard; amounts display as `RM 1,234.50`; dark mode follows the system; text clears WCAG 4.5:1 contrast in both modes.
 
 **First run on iPhone:** sign in → set monthly budget → "Add to Home Screen" guide → enable notifications (only shown when launched standalone).
 

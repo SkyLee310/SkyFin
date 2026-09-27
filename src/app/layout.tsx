@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   // The page runs under the home indicator, so bars pinned to the bottom add pb-safe.
   viewportFit: "cover",
-  // Matches --background in each system theme, so the status bar blends into the page.
+  // Matches --canvas in each system theme, so the status bar blends into the page.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#01020a" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f1ea" },
+    { media: "(prefers-color-scheme: dark)", color: "#12130f" },
   ],
 };
 

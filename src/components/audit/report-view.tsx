@@ -9,6 +9,7 @@ import { formatMonth, formatPeriod } from "./format";
  * One weekly or monthly audit (PRD §8.2). Every RM figure comes from content.stats, the tips'
  * saving_sen or content.budget, all computed before the model ran; the model's words are shown
  * as written. tests/unit/report-view.test.tsx checks each figure against the stats (M7.9).
+ * Figures stay plain formatRM text (not <Money>): that test reads the markup with tags as spaces.
  */
 export function ReportView({ content }: { content: AuditContent }) {
   const { stats } = content;
@@ -18,25 +19,25 @@ export function ReportView({ content }: { content: AuditContent }) {
 
   return (
     <article id="audit-report" className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" aria-hidden />
+      <header className="flex flex-col gap-1.5 px-1">
+        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-brand">
+          <Sparkles aria-hidden className="size-3.5 flex-shrink-0" />
           {content.kind === "weekly" ? "Weekly audit" : "Monthly review"} · {formatPeriod(content.period.start, content.period.end)}
         </p>
-        <h2 id="report-headline" className="text-lg font-bold text-slate-900 leading-snug">
+        <h2 id="report-headline" className="text-[1.375rem] leading-snug font-bold tracking-tight text-ink">
           {content.headline}
         </h2>
       </header>
 
-      <section className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Spent</h3>
-          <span id="report-total" className="text-2xl font-extrabold text-slate-900">
+      <section className="flex flex-col gap-3 rounded-[22px] bg-surface p-5 text-ink shadow-card">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Spent</h3>
+          <span id="report-total" className="mt-2 block text-[2.25rem] leading-none font-bold tracking-tight tabular-nums">
             {formatRM(stats.total_sen)}
           </span>
         </div>
         {stats.previous && change !== null && (
-          <p id="report-change" className="text-xs text-slate-500">
+          <p id="report-change" className="text-sm text-ink-muted">
             {change === 0
               ? `Same as ${previousLabel}`
               : `${formatRM(Math.abs(change))} ${change > 0 ? "more" : "less"} than ${previousLabel}`}
@@ -54,59 +55,68 @@ export function ReportView({ content }: { content: AuditContent }) {
         />
       </section>
 
-      <section className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Top categories</h3>
-        <ol id="report-top-categories" className="flex flex-col divide-y divide-slate-100">
+      <section className="rounded-[22px] bg-surface p-5 text-ink shadow-card">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Top categories</h3>
+        <ol id="report-top-categories" className="mt-1 flex flex-col divide-y divide-line">
           {stats.top_categories.map((c) => (
-            <li key={c.name} className="flex items-center gap-2 min-h-[40px] text-sm">
-              <span className="flex-1 text-slate-700">{c.name}</span>
-              <span className="text-xs text-slate-400">{c.pct}%</span>
-              <span className="w-24 text-right font-semibold text-slate-900 tabular-nums">{formatRM(c.sen)}</span>
+            <li key={c.name} className="flex flex-col gap-2 py-3 last:pb-0">
+              <div className="flex items-center gap-3 text-sm">
+                <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
+                <span className="text-xs font-semibold text-ink-muted tabular-nums">{c.pct}%</span>
+                <span className="w-24 text-right font-semibold tabular-nums">{formatRM(c.sen)}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-sunken" aria-hidden>
+                <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, Math.max(0, c.pct))}%` }} />
+              </div>
             </li>
           ))}
         </ol>
       </section>
 
       {stats.micro_expenses.length > 0 && (
-        <section className="bg-amber-50 border border-amber-200 rounded-3xl p-5">
-          <h3 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <Repeat className="w-3.5 h-3.5" aria-hidden /> Small buys that add up
+        <section className="rounded-[22px] bg-caution-soft p-5 text-ink">
+          <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-caution">
+            <Repeat aria-hidden className="size-3.5" /> Small buys that add up
           </h3>
-          <ul id="report-micro" className="flex flex-col gap-2">
+          <ul id="report-micro" className="mt-3 flex flex-col gap-2">
             {stats.micro_expenses.map((m) => (
-              <li key={m.label} data-testid="micro-expense" className="text-sm text-amber-950">
+              <li key={m.label} data-testid="micro-expense" className="text-sm leading-relaxed">
                 <span className="font-semibold capitalize">{m.label}</span> {m.count}× = {formatRM(m.total_sen)},{" "}
-                <span className="whitespace-nowrap">≈ {formatRM(m.monthly_sen)}/month</span>
+                <span className="font-semibold whitespace-nowrap text-caution">≈ {formatRM(m.monthly_sen)}/month</span>
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <section className="flex flex-col gap-2">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <Lightbulb className="w-3.5 h-3.5" aria-hidden /> 3 things to try
+      <section className="flex flex-col gap-2.5">
+        <h3 className="flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+          <Lightbulb aria-hidden className="size-3.5" /> 3 things to try
         </h3>
-        <ol id="report-tips" className="flex flex-col gap-2">
+        <ol id="report-tips" className="flex flex-col gap-2.5">
           {content.tips.map((tip, i) => (
-            <li key={i} data-testid="audit-tip" className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-              <p className="text-sm font-bold text-slate-900">
+            <li key={i} data-testid="audit-tip" className="rounded-[22px] bg-surface p-4 text-ink shadow-card">
+              <p className="text-sm font-bold">
                 {i + 1}. {tip.title}
               </p>
-              <p className="text-sm text-slate-600 mt-1 leading-relaxed">{tip.detail}</p>
-              <p className="text-xs font-semibold text-emerald-700 mt-2">Could save ≈ {formatRM(tip.saving_sen)}/month</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-muted">{tip.detail}</p>
+              <p className="mt-3 w-fit rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand">
+                Could save ≈ {formatRM(tip.saving_sen)}/month
+              </p>
             </li>
           ))}
         </ol>
       </section>
 
       {content.budget && (
-        <section id="report-budget" className="bg-slate-900 text-white rounded-3xl p-5 flex flex-col gap-1">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Wallet className="w-3.5 h-3.5" aria-hidden /> Budget for {formatMonth(content.budget.for_month)}
+        <section id="report-budget" className="flex flex-col gap-1 rounded-[22px] bg-nav p-5 text-nav-foreground shadow-card">
+          <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-nav-muted">
+            <Wallet aria-hidden className="size-3.5" /> Budget for {formatMonth(content.budget.for_month)}
           </h3>
-          <p className="text-xl font-extrabold">{formatRM(content.budget.suggested_budget_sen)}</p>
-          <p className="text-xs text-slate-400">
+          <p className="mt-1 text-[1.75rem] leading-tight font-bold tracking-tight tabular-nums">
+            {formatRM(content.budget.suggested_budget_sen)}
+          </p>
+          <p className="text-sm text-nav-muted">
             {content.budget.undone_at
               ? `You kept ${formatRM(content.budget.previous_budget_sen)} instead.`
               : content.budget.applied_at
@@ -116,7 +126,7 @@ export function ReportView({ content }: { content: AuditContent }) {
         </section>
       )}
 
-      <p className="text-[11px] text-slate-400">
+      <p className="px-1 text-xs text-ink-muted">
         {content.source === "ai"
           ? "Words by AI; every figure computed by SkyFin from your entries."
           : "Figures computed by SkyFin from your entries."}

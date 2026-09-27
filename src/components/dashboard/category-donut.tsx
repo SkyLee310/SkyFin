@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Cell, Pie, PieChart } from "recharts";
 import { formatRM } from "@/lib/money";
 import type { CategoryStat } from "@/lib/stats";
+import { Money } from "@/components/ui/money";
 import { OTHER, SERIES } from "./chart-colors";
 
 interface Slice {
@@ -60,26 +61,27 @@ export function CategoryDonut({
     <section
       id="category-donut"
       aria-labelledby="category-donut-title"
-      className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm"
+      className="rounded-[22px] bg-surface p-5 text-ink shadow-card"
     >
-      <h3 id="category-donut-title" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+      <h3 id="category-donut-title" className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
         Where it went
       </h3>
 
       {data.length === 0 ? (
-        <p className="text-sm text-slate-500 py-6 text-center">No expenses yet this month.</p>
+        <p className="py-8 text-center text-sm text-ink-muted">No expenses yet this month.</p>
       ) : (
         <>
-          <div className="relative mx-auto my-3 w-[180px] h-[180px]">
-            <PieChart width={180} height={180} accessibilityLayer>
+          <div className="relative mx-auto my-4 h-[188px] w-[188px]">
+            <PieChart width={188} height={188} accessibilityLayer>
               <Pie
                 data={data}
                 dataKey="sen"
                 nameKey="name"
-                innerRadius={58}
-                outerRadius={86}
+                innerRadius={70}
+                outerRadius={92}
                 paddingAngle={data.length > 1 ? 2 : 0}
-                stroke="#ffffff"
+                cornerRadius={4}
+                stroke="var(--surface)"
                 strokeWidth={2}
                 isAnimationActive={false}
                 onClick={(_, index) => {
@@ -93,26 +95,29 @@ export function CategoryDonut({
                 ))}
               </Pie>
             </PieChart>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[11px] text-slate-400">Spent</span>
-              <span id="donut-total" className="text-sm font-extrabold text-slate-900">
-                {formatRM(totalSen)}
-              </span>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Spent</span>
+              <Money id="donut-total" sen={totalSen} className="mt-0.5 text-xl font-bold tracking-tight" />
             </div>
           </div>
 
-          <ul className="flex flex-col divide-y divide-slate-100">
+          <ul className="flex flex-col">
             {data.map((s) => (
               <li key={s.key}>
                 <Link
                   href={hrefFor(s)}
                   data-testid="donut-legend-row"
-                  className="flex items-center gap-2.5 min-h-[44px] text-sm"
+                  className="flex min-h-[52px] flex-col justify-center gap-1.5 py-2 text-sm"
                 >
-                  <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: s.color }} aria-hidden />
-                  <span className="flex-1 text-slate-700 truncate">{s.name}</span>
-                  <span className="text-xs text-slate-400 tabular-nums">{s.pct}%</span>
-                  <span className="w-24 text-right font-semibold text-slate-900 tabular-nums">{formatRM(s.sen)}</span>
+                  <span className="flex items-center gap-2.5">
+                    <span className="size-2.5 flex-shrink-0 rounded-full" style={{ background: s.color }} aria-hidden />
+                    <span className="flex-1 truncate font-medium">{s.name}</span>
+                    <span className="text-xs text-ink-muted tabular-nums">{s.pct}%</span>
+                    <span className="w-24 text-right font-semibold tabular-nums">{formatRM(s.sen)}</span>
+                  </span>
+                  <span className="block h-1 w-full overflow-hidden rounded-full bg-sunken" aria-hidden>
+                    <span className="block h-full rounded-full" style={{ width: `${s.pct}%`, background: s.color }} />
+                  </span>
                 </Link>
               </li>
             ))}

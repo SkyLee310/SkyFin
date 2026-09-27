@@ -76,8 +76,9 @@ export function ReceiptButtons({ disabled, onStage, onOutcome }: ReceiptButtonsP
     }
   };
 
+  // Plain icons inside the composer pill, as in a messaging app; each still has a 44 px target.
   const buttonClass =
-    "min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-600 bg-slate-50 border border-slate-200 rounded-full disabled:opacity-40 active:scale-95 transition-transform";
+    "flex size-11 flex-shrink-0 items-center justify-center rounded-full text-ink-muted disabled:opacity-40";
 
   return (
     <>
@@ -108,7 +109,7 @@ export function ReceiptButtons({ disabled, onStage, onOutcome }: ReceiptButtonsP
         onClick={() => cameraRef.current?.click()}
         className={buttonClass}
       >
-        <Camera className="w-5 h-5" />
+        <Camera aria-hidden className="size-5" />
       </button>
       <button
         type="button"
@@ -118,7 +119,7 @@ export function ReceiptButtons({ disabled, onStage, onOutcome }: ReceiptButtonsP
         onClick={() => galleryRef.current?.click()}
         className={buttonClass}
       >
-        <ImageIcon className="w-5 h-5" />
+        <ImageIcon aria-hidden className="size-5" />
       </button>
     </>
   );

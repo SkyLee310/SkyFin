@@ -68,6 +68,14 @@ export function addDaysMYT(date: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** A business date as History's day heading: "Today", "Yesterday", else "Fri, 25 Sep". */
+export function dayLabelMYT(date: string, today: string): string {
+  if (date === today) return "Today";
+  if (date === addDaysMYT(today, -1)) return "Yesterday";
+  monthRangeMYT(date); // validates
+  return format(new Date(`${date}T00:00:00+08:00`), "EEE, d MMM", { in: MYT });
+}
+
 /** Day of the week of a business date, 0 = Sunday … 6 = Saturday. */
 export function weekdayMYT(date: string): number {
   monthRangeMYT(date); // validates

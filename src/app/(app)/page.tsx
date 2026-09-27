@@ -6,8 +6,9 @@ import { CategoryDonut } from "@/components/dashboard/category-donut";
 import { PaymentBar } from "@/components/dashboard/payment-bar";
 import { NeedsWantsBar } from "@/components/dashboard/needs-wants-bar";
 import { OnboardingSteps } from "@/components/onboarding/onboarding-steps";
+import { monthName } from "@/lib/i18n";
 import Link from "next/link";
-import { Plus, ArrowRight } from "lucide-react";
+import { ChevronRight, Plus, ReceiptText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -15,24 +16,24 @@ export default async function DashboardPage() {
   const data = await getDashboard();
 
   return (
-    <div className="flex flex-col gap-5 p-4 pt-safe">
+    <div className="flex flex-col gap-4 p-4">
       {/* Top Header */}
-      <div className="flex items-center justify-between py-2">
+      <header className="flex items-center justify-between gap-3 pt-2 pb-1">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-            SkyFin
-          </h1>
-          <p className="text-xs text-slate-500">Student Expense Tracker</p>
+          <h1 className="text-[1.625rem] font-bold tracking-tight text-ink">SkyFin</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            Overview · {monthName(data.month, "en")}
+          </p>
         </div>
 
         <Link
           href="/chat"
-          className="min-h-[44px] px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 hover:bg-slate-800 transition-colors shadow-sm"
+          className="flex min-h-11 items-center gap-1.5 rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground shadow-card"
         >
-          <Plus className="w-3.5 h-3.5 text-emerald-400" />
+          <Plus aria-hidden className="size-4" strokeWidth={2.5} />
           <span>Log</span>
         </Link>
-      </div>
+      </header>
 
       {/* First run: Add to Home Screen, then notifications (F15), once the budget is set. */}
       {data.budgetSen > 0 && <OnboardingSteps />}
@@ -68,22 +69,20 @@ export default async function DashboardPage() {
         </>
       )}
 
-      {/* Quick Access to History */}
-      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between">
-        <div>
-          <h4 className="text-xs font-bold text-slate-800">Recent Spending</h4>
-          <p className="text-[11px] text-slate-500">
-            View full breakdown, edit or delete transactions
-          </p>
-        </div>
-        <Link
-          href="/history"
-          className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 p-2 min-h-[44px]"
-        >
-          <span>History</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
+      {/* Quick access to History. Its name leaves out "History" so the tab bar's link stays the only match. */}
+      <Link
+        href="/history"
+        className="flex min-h-16 items-center gap-3 rounded-[22px] bg-surface p-4 text-ink shadow-card"
+      >
+        <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-sunken text-ink-muted">
+          <ReceiptText aria-hidden className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold">Recent spending</span>
+          <span className="block text-xs text-ink-muted">View full breakdown, edit or delete transactions</span>
+        </span>
+        <ChevronRight aria-hidden className="size-5 flex-shrink-0 text-ink-subtle" />
+      </Link>
     </div>
   );
 }

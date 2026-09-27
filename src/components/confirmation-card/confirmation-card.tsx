@@ -8,12 +8,15 @@ import { Draft, PaymentMethod } from "@/lib/validation/schemas";
 import { saveTransactions, updateTransaction } from "@/actions/transactions";
 import { discardReceipt } from "@/actions/ai";
 import { todayMYT, isFutureDateMYT } from "@/lib/dates";
+import { Input } from "@/components/ui/input";
 import { AmountInput } from "./amount-input";
 import { PaymentToggle } from "./payment-toggle";
 import { NeedsWantsToggle } from "./needs-wants-toggle";
 import { CategorySelector } from "./category-selector";
 import { SplitEditor } from "./split-editor";
 import { type SplitRow, isSplitComplete } from "./split";
+
+const labelClass = "text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted";
 
 /** An uploaded receipt photo the card is logging; previewUrl is a local object URL. */
 export interface ReceiptAttachment {
@@ -206,202 +209,191 @@ function ConfirmationCardForm({
   const isEditMode = !!initialDraft?.id;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-white rounded-t-[28px]">
+    <div className="flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-surface">
       {/* Fields scroll; the actions below stay pinned at the bottom of the sheet. */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 pb-2">
-      {/* Grab Handle */}
-      <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-slate-300 mb-4" />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-3 pb-2">
+        {/* The sheet drags down to close (vaul), so it keeps a grabber. */}
+        <div className="mx-auto mb-3 h-1.5 w-10 flex-shrink-0 rounded-full bg-ink-subtle/50" />
 
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-        <Drawer.Title className="text-lg font-bold text-slate-900">
-          {isEditMode ? "Edit Transaction" : "New Transaction"}
-        </Drawer.Title>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="w-11 h-11 -mr-2 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+        <div className="flex items-center justify-between">
+          <Drawer.Title className="text-xl font-bold tracking-tight text-ink">
+            {isEditMode ? "Edit Transaction" : "New Transaction"}
+          </Drawer.Title>
+          {/* A small iOS-style circle inside a 44 px target. */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-2 flex size-11 items-center justify-center rounded-full"
+          >
+            <span className="flex size-8 items-center justify-center rounded-full bg-sunken text-ink-muted">
+              <X aria-hidden className="size-4" />
+            </span>
+          </button>
+        </div>
 
-      {/* Form Fields */}
-      <div className="flex flex-col gap-4 py-4">
-        {receipt && (
-          <div className="flex items-center gap-3">
-            {receipt.previewUrl ? (
+        <div className="flex flex-col gap-5 py-4">
+          {receipt && (
+            <div className="flex items-center gap-3 rounded-2xl bg-sunken p-2.5 pr-3.5">
+              {receipt.previewUrl ? (
+                <button
+                  type="button"
+                  id="receipt-thumbnail"
+                  onClick={() => setPhotoOpen(true)}
+                  aria-label="Enlarge receipt photo"
+                  className="size-14 flex-shrink-0 overflow-hidden rounded-xl bg-surface"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a local object URL, not an optimisable asset */}
+                  <img src={receipt.previewUrl} alt="Receipt" className="size-full object-cover" />
+                </button>
+              ) : null}
+              <p className="text-sm leading-snug text-ink-muted">
+                Check what was read from your receipt. Nothing is saved until you confirm.
+              </p>
+            </div>
+          )}
+
+          {currencyWarning && (
+            <div
+              id="currency-warning"
+              className="flex flex-col gap-1 rounded-2xl bg-caution-soft px-3.5 pt-3 pb-1 text-caution"
+            >
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                <AlertTriangle aria-hidden className="size-4" /> Currency may not be RM
+              </p>
+              <label className="flex min-h-11 items-center gap-2.5 text-sm font-medium">
+                <input
+                  id="confirm-currency-rm"
+                  type="checkbox"
+                  checked={rmConfirmed}
+                  onChange={(e) => setRmConfirmed(e.target.checked)}
+                  className="size-5 flex-shrink-0 accent-caution"
+                />
+                I&apos;ve checked the amount is in RM
+              </label>
+            </div>
+          )}
+
+          {/* Selected looks like the active tab in the tab bar: ink pill, canvas text. */}
+          {!splitRows && (
+            <div className="grid grid-cols-2 gap-1 rounded-full bg-sunken p-1">
               <button
                 type="button"
-                id="receipt-thumbnail"
-                onClick={() => setPhotoOpen(true)}
-                aria-label="Enlarge receipt photo"
-                className="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden border border-slate-200 bg-slate-100"
+                id="type-expense-btn"
+                aria-pressed={type === "expense"}
+                onClick={() => handleTypeChange("expense")}
+                className={`min-h-11 rounded-full text-sm font-semibold ${
+                  type === "expense" ? "bg-ink text-canvas" : "text-ink-muted"
+                }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- a local object URL, not an optimisable asset */}
-                <img src={receipt.previewUrl} alt="Receipt" className="w-full h-full object-cover" />
+                Expense
               </button>
-            ) : null}
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Check what was read from your receipt. Nothing is saved until you confirm.
-            </p>
-          </div>
-        )}
+              <button
+                type="button"
+                id="type-income-btn"
+                aria-pressed={type === "income"}
+                onClick={() => handleTypeChange("income")}
+                className={`min-h-11 rounded-full text-sm font-semibold ${
+                  type === "income" ? "bg-ink text-canvas" : "text-ink-muted"
+                }`}
+              >
+                Income
+              </button>
+            </div>
+          )}
 
-        {currencyWarning && (
-          <div id="currency-warning" className="flex flex-col gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-            <p className="flex items-center gap-2 text-xs font-semibold text-amber-800">
-              <AlertTriangle className="w-4 h-4" /> Currency may not be RM
-            </p>
-            <label className="flex items-center gap-2 min-h-[44px] text-xs text-amber-900">
-              <input
-                id="confirm-currency-rm"
-                type="checkbox"
-                checked={rmConfirmed}
-                onChange={(e) => setRmConfirmed(e.target.checked)}
-                className="w-5 h-5 accent-amber-600"
-              />
-              I&apos;ve checked the amount is in RM
+          <AmountInput
+            amountSen={amountSen}
+            onChange={setAmountSen}
+            highlight={lowConfidence}
+            label={splitRows ? "Receipt total" : "Amount"}
+          />
+
+          {splitRows && (
+            <SplitEditor
+              totalSen={amountSen}
+              rows={splitRows}
+              categories={categories}
+              onChange={setSplitRows}
+              onCancel={() => setSplitRows(null)}
+            />
+          )}
+
+          {!splitRows && (
+            <CategorySelector
+              categories={categories}
+              selectedId={categoryId}
+              kind={type}
+              onSelect={(cat) => {
+                setCategoryId(cat.id);
+                if (type === "expense") {
+                  setIsEssential(cat.default_essential);
+                }
+              }}
+              onCategoryCreated={handleCategoryCreated}
+            />
+          )}
+
+          <PaymentToggle value={paymentMethod} onChange={setPaymentMethod} />
+
+          {/* Needs vs Wants (Expenses Only) */}
+          {type === "expense" && !splitRows && (
+            <NeedsWantsToggle isEssential={isEssential} onChange={setIsEssential} />
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="confirmation-merchant-input" className={labelClass}>
+              Merchant / Place
             </label>
+            <Input
+              id="confirmation-merchant-input"
+              type="text"
+              placeholder="e.g. 99 Speedmart, Mamak, Shopee"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              maxLength={80}
+            />
           </div>
-        )}
 
-        {/* Type Switcher */}
-        {!splitRows && (
-        <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
-          <button
-            type="button"
-            id="type-expense-btn"
-            onClick={() => handleTypeChange("expense")}
-            className={`min-h-[44px] text-sm font-semibold rounded-lg transition-all ${
-              type === "expense"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Expense
-          </button>
-          <button
-            type="button"
-            id="type-income-btn"
-            onClick={() => handleTypeChange("income")}
-            className={`min-h-[44px] text-sm font-semibold rounded-lg transition-all ${
-              type === "income"
-                ? "bg-white text-emerald-700 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Income
-          </button>
-        </div>
-        )}
-
-        {/* Amount */}
-        <AmountInput
-          amountSen={amountSen}
-          onChange={setAmountSen}
-          highlight={lowConfidence}
-          label={splitRows ? "Receipt total" : "Amount"}
-        />
-
-        {splitRows && (
-          <SplitEditor
-            totalSen={amountSen}
-            rows={splitRows}
-            categories={categories}
-            onChange={setSplitRows}
-            onCancel={() => setSplitRows(null)}
-          />
-        )}
-
-        {/* Category */}
-        {!splitRows && (
-        <CategorySelector
-          categories={categories}
-          selectedId={categoryId}
-          kind={type}
-          onSelect={(cat) => {
-            setCategoryId(cat.id);
-            if (type === "expense") {
-              setIsEssential(cat.default_essential);
-            }
-          }}
-          onCategoryCreated={handleCategoryCreated}
-        />
-        )}
-
-        {/* Payment Method */}
-        <PaymentToggle value={paymentMethod} onChange={setPaymentMethod} />
-
-        {/* Needs vs Wants (Expenses Only) */}
-        {type === "expense" && !splitRows && (
-          <NeedsWantsToggle
-            isEssential={isEssential}
-            onChange={setIsEssential}
-          />
-        )}
-
-        {/* Merchant / Store */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Merchant / Place
-          </label>
-          <input
-            id="confirmation-merchant-input"
-            type="text"
-            placeholder="e.g. 99 Speedmart, Mamak, Shopee"
-            value={merchant}
-            onChange={(e) => setMerchant(e.target.value)}
-            maxLength={80}
-            className="w-full min-h-[44px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
-
-        {/* Date */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Date
-          </label>
-          <div className="relative">
-            <input
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="confirmation-date-input" className={labelClass}>
+              Date
+            </label>
+            {/* iOS centres a date input's value; keep it left like the other fields. */}
+            <Input
               id="confirmation-date-input"
               type="date"
               max={todayMYT()}
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="font-medium [&::-webkit-date-and-time-value]:text-left"
             />
           </div>
-        </div>
 
-        {/* Note */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Note
-          </label>
-          <input
-            id="confirmation-note-input"
-            type="text"
-            placeholder="Optional details..."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={200}
-            className="w-full min-h-[44px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
-
-        {errorMessage && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
-            {errorMessage}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="confirmation-note-input" className={labelClass}>
+              Note
+            </label>
+            <Input
+              id="confirmation-note-input"
+              type="text"
+              placeholder="Optional details..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={200}
+            />
           </div>
-        )}
-      </div>
 
+          {errorMessage && (
+            <p role="alert" className="rounded-2xl bg-danger-soft px-3.5 py-3 text-sm font-medium text-danger">
+              {errorMessage}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Pinned actions */}
-      <div className="flex-shrink-0 px-4 pt-3 pb-safe mb-3 bg-white border-t border-slate-100 flex flex-col gap-2">
+      <div className="flex flex-shrink-0 flex-col gap-2 border-t border-line bg-surface px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {receipt && !isEditMode && (
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -413,9 +405,13 @@ function ConfirmationCardForm({
                 await onDiscard();
                 setIsDiscarding(false);
               }}
-              className="min-h-[44px] flex items-center justify-center gap-1.5 text-sm font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl disabled:opacity-40"
+              className="flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-danger-soft text-sm font-semibold text-danger disabled:opacity-40"
             >
-              {isDiscarding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {isDiscarding ? (
+                <Loader2 aria-hidden className="size-4 animate-spin" />
+              ) : (
+                <Trash2 aria-hidden className="size-4" />
+              )}
               Discard
             </button>
             <button
@@ -423,9 +419,9 @@ function ConfirmationCardForm({
               id="btn-split"
               disabled={isSubmitting || !!splitRows || amountSen <= 0 || type !== "expense"}
               onClick={startSplit}
-              className="min-h-[44px] flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl disabled:opacity-40"
+              className="flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-sunken text-sm font-semibold text-ink disabled:opacity-40"
             >
-              <Scissors className="w-4 h-4" />
+              <Scissors aria-hidden className="size-4" />
               Split
             </button>
           </div>
@@ -435,16 +431,16 @@ function ConfirmationCardForm({
           id="btn-confirm-save"
           disabled={!isValid || isSubmitting}
           onClick={handleSave}
-          className="w-full min-h-[48px] px-4 py-3 bg-slate-900 text-white font-semibold text-base rounded-xl hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99]"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-brand px-4 text-base font-semibold text-brand-foreground disabled:opacity-40"
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 aria-hidden className="size-5 animate-spin" />
               <span>Saving...</span>
             </>
           ) : (
             <>
-              <Check className="w-5 h-5 text-emerald-400" />
+              <Check aria-hidden className="size-5" />
               <span>{isEditMode ? "Update Transaction" : "Confirm & Save"}</span>
             </>
           )}
@@ -455,10 +451,10 @@ function ConfirmationCardForm({
           type="button"
           onClick={() => setPhotoOpen(false)}
           aria-label="Close receipt photo"
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- a local object URL */}
-          <img src={receipt.previewUrl} alt="Receipt, full size" className="max-w-full max-h-full object-contain" />
+          <img src={receipt.previewUrl} alt="Receipt, full size" className="max-h-full max-w-full object-contain" />
         </button>
       )}
     </div>
@@ -492,8 +488,8 @@ export function ConfirmationCard({
   return (
     <Drawer.Root open={open} onOpenChange={handleOpenChange}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-        <Drawer.Content className="bg-white flex flex-col rounded-t-[28px] max-h-[92vh] fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 shadow-2xl focus:outline-none">
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <Drawer.Content className="fixed right-0 bottom-0 left-0 z-50 flex max-h-[92vh] flex-col rounded-t-[28px] bg-surface text-ink shadow-float focus:outline-none">
           {open && (
             <ConfirmationCardForm
               key={formKey}

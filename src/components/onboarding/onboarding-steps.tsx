@@ -12,6 +12,12 @@ type Step = "install" | "notify" | null;
 
 const DISMISSED = { install: "skyfin:install-dismissed", notify: "skyfin:notify-dismissed" } as const;
 
+const INSTALL_STEPS = [
+  { Icon: Share, text: "Tap Share in Safari's toolbar." },
+  { Icon: SquarePlus, text: "Choose “Add to Home Screen”, then Add." },
+  { Icon: Bell, text: "Open SkyFin from the new icon to turn on alerts." },
+];
+
 function wasDismissed(step: Exclude<Step, null>): boolean {
   try {
     return localStorage.getItem(DISMISSED[step]) === "1";
@@ -50,50 +56,63 @@ export function OnboardingSteps() {
 
   if (step === "install") {
     return (
-      <section id="install-step" className="relative p-4 bg-sky-50 border border-sky-200 rounded-2xl text-sky-950">
+      <section id="install-step" className="relative rounded-[22px] bg-surface p-5 text-ink shadow-card">
         <button
           type="button"
           onClick={dismiss}
           aria-label="Hide install steps"
-          className="absolute top-1 right-1 w-11 h-11 flex items-center justify-center opacity-60"
+          className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-full text-ink-muted"
         >
-          <X className="w-4 h-4" />
+          <X aria-hidden className="size-4" />
         </button>
-        <h2 className="text-sm font-bold pr-8">Add SkyFin to your Home Screen</h2>
-        <p className="text-xs mt-1 opacity-80">Warnings and your Sunday audit can reach you only from the Home Screen app.</p>
-        <ol className="flex flex-col gap-2 mt-3 text-sm">
-          <li className="flex items-center gap-2">
-            <Share className="w-4 h-4 flex-shrink-0" aria-hidden /> 1. Tap Share in Safari&apos;s toolbar.
-          </li>
-          <li className="flex items-center gap-2">
-            <SquarePlus className="w-4 h-4 flex-shrink-0" aria-hidden /> 2. Choose &ldquo;Add to Home Screen&rdquo;, then Add.
-          </li>
-          <li className="flex items-center gap-2">
-            <Bell className="w-4 h-4 flex-shrink-0" aria-hidden /> 3. Open SkyFin from the new icon to turn on alerts.
-          </li>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-info">Get set up</p>
+        <h2 className="mt-1 pr-10 text-base font-bold tracking-tight">Add SkyFin to your Home Screen</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Warnings and your Sunday audit can reach you only from the Home Screen app.
+        </p>
+        <ol role="list" className="mt-4 flex flex-col gap-2 text-sm">
+          {INSTALL_STEPS.map(({ Icon, text }, i) => (
+            <li key={i} className="flex items-center gap-3 rounded-2xl bg-sunken p-2.5">
+              <span className="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-surface text-info">
+                <Icon aria-hidden className="size-4" />
+              </span>
+              <span>
+                <span className="font-semibold tabular-nums">{i + 1}.</span> {text}
+              </span>
+            </li>
+          ))}
         </ol>
       </section>
     );
   }
 
   return (
-    <section id="notify-step" className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950">
-      <h2 className="text-sm font-bold">Get warned before the money runs out</h2>
-      <p className="text-xs mt-1 opacity-80">
-        At most one budget alert an evening, plus your weekly audit on Sunday.
-      </p>
+    <section id="notify-step" className="rounded-[22px] bg-surface p-5 text-ink shadow-card">
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+          <Bell aria-hidden className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-bold tracking-tight">Get warned before the money runs out</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            At most one budget alert an evening, plus your weekly audit on Sunday.
+          </p>
+        </div>
+      </div>
       {result === "denied" ? (
-        <p className="text-xs mt-3 font-medium">
+        <p className="mt-4 rounded-2xl bg-caution-soft px-3 py-2.5 text-sm font-medium text-caution">
           Notifications are off. You can turn them on in Settings → Notifications → SkyFin; warnings still show in the app.
         </p>
       ) : result === "failed" || result === "unsupported" ? (
-        <p className="text-xs mt-3 font-medium">Couldn&apos;t turn on notifications. Warnings still show in the app.</p>
+        <p className="mt-4 rounded-2xl bg-danger-soft px-3 py-2.5 text-sm font-medium text-danger">
+          Couldn&apos;t turn on notifications. Warnings still show in the app.
+        </p>
       ) : null}
-      <div className="grid grid-cols-2 gap-2 mt-3">
+      <div className="mt-4 flex gap-2">
         <button
           type="button"
           onClick={dismiss}
-          className="min-h-[44px] rounded-xl bg-white/80 border border-emerald-200 text-sm font-semibold"
+          className="min-h-11 rounded-full bg-sunken px-5 text-sm font-semibold text-ink"
         >
           Not now
         </button>
@@ -108,9 +127,9 @@ export function OnboardingSteps() {
             setResult(outcome);
             if (outcome === "enabled") setHidden(true);
           }}
-          className="min-h-[44px] rounded-xl bg-emerald-700 text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground disabled:opacity-50"
         >
-          {pending && <Loader2 className="w-4 h-4 animate-spin" />}
+          {pending && <Loader2 aria-hidden className="size-4 animate-spin" />}
           Enable notifications
         </button>
       </div>

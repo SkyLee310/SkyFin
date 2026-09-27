@@ -15,8 +15,8 @@ export function NeedsWantsBar({
   const total = needsSen + wantsSen;
   const wantsPct = pctOf(wantsSen, total);
   return (
-    <section id="needs-wants-bar" className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
-      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Needs vs Wants</h3>
+    <section id="needs-wants-bar" className="flex flex-col gap-4 rounded-[22px] bg-surface p-5 text-ink shadow-card">
+      <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Needs vs Wants</h3>
       <StackedBar
         id="needs-wants"
         segments={[

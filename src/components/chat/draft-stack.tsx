@@ -43,9 +43,9 @@ export function DraftStack({
     <section
       id="draft-stack"
       aria-label="Unsaved drafts"
-      className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-sm"
+      className="flex flex-col gap-3 rounded-[22px] bg-surface p-4 text-ink shadow-card"
     >
-      <h2 className="px-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
+      <h2 className="px-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
         {drafts.length === 1 ? "Draft" : `${drafts.length} drafts`} · not saved yet
       </h2>
 
@@ -53,42 +53,38 @@ export function DraftStack({
         const category = categories.find((c) => c.id === d.categoryId);
         const title = d.merchant || d.itemLabel || category?.name || "Entry";
         return (
-          <div
-            key={d.clientId}
-            data-testid="draft-row"
-            className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-100 rounded-xl"
-          >
-            <div className="flex items-start justify-between gap-2">
+          <div key={d.clientId} data-testid="draft-row" className="flex flex-col gap-2.5 rounded-2xl bg-sunken p-3">
+            <div className="flex items-start justify-between gap-3">
               <button
                 type="button"
                 onClick={() => onEdit(d.clientId)}
-                className="flex-1 min-h-[44px] flex flex-col items-start text-left"
+                className="flex min-h-11 min-w-0 flex-1 flex-col items-start text-left"
                 aria-label={`Edit ${title}`}
               >
                 <span
-                  className={`font-semibold text-sm text-slate-900 line-clamp-1 ${!d.merchant && d.itemLabel ? "capitalize" : ""}`}
+                  className={`line-clamp-1 text-sm font-semibold ${!d.merchant && d.itemLabel ? "capitalize" : ""}`}
                 >
                   {title}
                 </span>
-                <span className="flex flex-wrap items-center gap-1.5 mt-1">
-                  <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-white text-slate-600 border border-slate-200">
+                <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-ink-muted">
                     {category?.name ?? "Others"}
                   </span>
                   {d.type === "expense" ? (
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
-                        d.isEssential ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        d.isEssential ? "bg-brand-soft text-brand" : "bg-caution-soft text-caution"
                       }`}
                     >
                       {d.isEssential ? "Needs" : "Wants"}
                     </span>
                   ) : (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-emerald-50 text-emerald-700">
+                    <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand">
                       Income
                     </span>
                   )}
                   {d.date !== today && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-white text-slate-500 border border-slate-200">
+                    <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-ink-muted tabular-nums">
                       {d.date}
                     </span>
                   )}
@@ -96,13 +92,16 @@ export function DraftStack({
               </button>
               <span
                 data-testid="draft-amount"
-                className={`font-bold text-sm pt-1 ${d.type === "income" ? "text-emerald-600" : "text-slate-900"}`}
+                className={`flex-shrink-0 pt-0.5 text-base font-bold whitespace-nowrap tabular-nums ${
+                  d.type === "income" ? "text-brand" : "text-ink"
+                }`}
               >
                 {d.type === "income" ? "+" : ""}
                 {formatRM(d.amountSen)}
               </span>
             </div>
 
+            {/* Selected looks like the active tab in the tab bar: ink pill, canvas text. */}
             <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Payment method">
               {METHODS.map(({ id, icon: Icon }) => {
                 const selected = d.paymentMethod === id;
@@ -112,20 +111,18 @@ export function DraftStack({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => onPaymentChange(d.clientId, id)}
-                    className={`min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold border ${
-                      selected
-                        ? "bg-slate-900 text-white border-slate-900"
-                        : "bg-white text-slate-700 border-slate-200"
+                    className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full text-xs font-semibold ${
+                      selected ? "bg-ink text-canvas" : "bg-surface text-ink"
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${selected ? "text-emerald-400" : "text-slate-400"}`} />
+                    <Icon className={`size-4 ${selected ? "" : "text-ink-muted"}`} />
                     {id}
                   </button>
                 );
               })}
             </div>
             {d.paymentMethod === null && (
-              <p className="px-1 text-[11px] text-amber-700">Tap how you paid to save.</p>
+              <p className="px-1 text-xs font-medium text-caution">Tap how you paid to save.</p>
             )}
 
             <div className="grid grid-cols-3 gap-1.5">
@@ -133,25 +130,25 @@ export function DraftStack({
                 type="button"
                 onClick={() => onDiscard(d.clientId)}
                 disabled={busy}
-                className="min-h-[44px] flex items-center justify-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg disabled:opacity-40"
+                className="flex min-h-11 items-center justify-center gap-1 rounded-full bg-surface text-xs font-semibold text-ink-muted disabled:opacity-40"
               >
-                <X className="w-4 h-4" /> Discard
+                <X aria-hidden className="size-4" /> Discard
               </button>
               <button
                 type="button"
                 onClick={() => onEdit(d.clientId)}
                 disabled={busy}
-                className="min-h-[44px] flex items-center justify-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg disabled:opacity-40"
+                className="flex min-h-11 items-center justify-center gap-1 rounded-full bg-surface text-xs font-semibold text-ink-muted disabled:opacity-40"
               >
-                <Pencil className="w-4 h-4" /> Edit
+                <Pencil aria-hidden className="size-4" /> Edit
               </button>
               <button
                 type="button"
                 onClick={() => onSave(d.clientId)}
                 disabled={busy || d.paymentMethod === null}
-                className="min-h-[44px] flex items-center justify-center gap-1 text-xs font-semibold text-white bg-slate-900 rounded-lg disabled:opacity-40"
+                className="flex min-h-11 items-center justify-center gap-1 rounded-full bg-brand text-xs font-semibold text-brand-foreground disabled:opacity-40"
               >
-                <Check className="w-4 h-4 text-emerald-400" /> Save
+                <Check aria-hidden className="size-4" /> Save
               </button>
             </div>
           </div>
@@ -164,9 +161,9 @@ export function DraftStack({
           id="btn-save-all-drafts"
           onClick={onSaveAll}
           disabled={busy || !allReady}
-          className="min-h-[48px] flex items-center justify-center gap-2 text-sm font-semibold text-white bg-emerald-600 rounded-xl disabled:opacity-40"
+          className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand text-sm font-semibold text-brand-foreground disabled:opacity-40"
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {busy ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <Check aria-hidden className="size-4" />}
           Save all
         </button>
       )}

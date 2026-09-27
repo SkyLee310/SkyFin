@@ -29,7 +29,7 @@ export function StackedBar({
   return (
     <div className="flex flex-col gap-3">
       <div className="relative pt-1" aria-hidden>
-        <div className="flex h-4 w-full gap-[2px] rounded-full overflow-hidden bg-slate-100" data-testid={`${id}-bar`}>
+        <div className="flex h-3 w-full gap-[3px] overflow-hidden rounded-full bg-sunken" data-testid={`${id}-bar`}>
           {visible.map((s) => (
             <span
               key={s.key}
@@ -41,19 +41,19 @@ export function StackedBar({
         {marker && (
           <div
             data-testid={`${id}-marker`}
-            className="absolute top-0 bottom-[-6px] w-[2px] bg-slate-900"
+            className="absolute top-0 bottom-[-6px] w-[2px] rounded-full bg-ink"
             style={{ left: `calc(${Math.min(100, Math.max(0, marker.pct))}% - 1px)` }}
           />
         )}
       </div>
-      {marker && <p className="text-[11px] text-slate-500 -mt-1">{marker.label}</p>}
-      <ul className="flex flex-col">
+      {marker && <p className="-mt-1 text-xs text-ink-muted">{marker.label}</p>}
+      <ul className="flex flex-col divide-y divide-line">
         {segments.map((s) => (
-          <li key={s.key} data-testid={`${id}-row`} className="flex items-center gap-2.5 min-h-[36px] text-sm px-1">
-            <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: s.color }} aria-hidden />
-            <span className="flex-1 text-slate-700">{s.label}</span>
-            <span className="text-xs text-slate-400 tabular-nums">{s.pct}%</span>
-            <span className="w-24 text-right font-semibold text-slate-900 tabular-nums">{formatRM(s.sen)}</span>
+          <li key={s.key} data-testid={`${id}-row`} className="flex min-h-[40px] items-center gap-2.5 text-sm">
+            <span className="size-2.5 flex-shrink-0 rounded-full" style={{ background: s.color }} aria-hidden />
+            <span className="flex-1 font-medium">{s.label}</span>
+            <span className="text-xs text-ink-muted tabular-nums">{s.pct}%</span>
+            <span className="w-24 text-right font-semibold tabular-nums">{formatRM(s.sen)}</span>
           </li>
         ))}
       </ul>

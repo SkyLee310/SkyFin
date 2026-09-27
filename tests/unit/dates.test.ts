@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysLeftInMonthMYT, isLastDayOfMonthMYT, monthRangeMYT, todayMYT } from "@/lib/dates";
+import { dayLabelMYT, daysLeftInMonthMYT, isLastDayOfMonthMYT, monthRangeMYT, todayMYT } from "@/lib/dates";
 
 // MYT is UTC+8 all year, so 16:00Z is midnight in Kuala Lumpur.
 
@@ -58,6 +58,21 @@ describe("daysLeftInMonthMYT", () => {
     ["2026-02-28T04:00:00Z", 1],
   ])("at %s is %i", (iso, expected) => {
     expect(daysLeftInMonthMYT(new Date(iso))).toBe(expected);
+  });
+});
+
+describe("dayLabelMYT", () => {
+  it.each([
+    ["2026-09-26", "2026-09-26", "Today"],
+    ["2026-09-30", "2026-10-01", "Yesterday"], // across a month end
+    ["2026-09-01", "2026-09-26", "Tue, 1 Sep"],
+    ["2025-12-31", "2026-01-02", "Wed, 31 Dec"],
+  ])("%s seen on %s is %j", (date, today, expected) => {
+    expect(dayLabelMYT(date, today)).toBe(expected);
+  });
+
+  it("rejects a date that is not YYYY-MM-DD", () => {
+    expect(() => dayLabelMYT("2026-02-30", "2026-03-05")).toThrow(RangeError);
   });
 });
 

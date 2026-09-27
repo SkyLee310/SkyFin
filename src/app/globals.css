@@ -3,29 +3,65 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Dark mode follows the system setting (PRD §9): the dark tokens live in a
- * prefers-color-scheme query, and Tailwind's default `dark:` variant uses the
- * same query, so there is no `.dark` class to toggle.
+ * LedgerUI look (PRD D39): a warm cream canvas, white cards with a soft shadow, and
+ * forest green as the only strong colour. Components colour with the semantic tokens
+ * below (bg-canvas, bg-surface, text-ink, text-ink-muted, bg-brand, bg-caution-soft,
+ * ...), never with Tailwind's palette (bg-white, text-slate-900), so one set of
+ * variables themes every screen.
  *
- * No web font: Tailwind's default --font-sans is the system stack, which is
- * SF Pro with PingFang for Chinese on iPhone.
+ * Dark mode follows the system setting (PRD §9): the dark values live in a
+ * prefers-color-scheme query, and Tailwind's default `dark:` variant uses the same
+ * query, so there is no `.dark` class to toggle and components need no dark: classes.
+ *
+ * No web font: Tailwind's default --font-sans is the system stack, which is SF Pro
+ * with PingFang for Chinese on iPhone. Money uses tabular-nums so figures line up.
+ *
+ * Contrast (WCAG): ink and ink-muted clear 4.5:1 on canvas, surface and sunken in
+ * both schemes; each status colour clears 4.5:1 on its -soft tint and on surface;
+ * chart colours clear 3:1 on surface. ink-subtle is for icons and hairlines only.
  */
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-nav: var(--nav);
+  --color-nav-foreground: var(--nav-foreground);
+  --color-nav-muted: var(--nav-muted);
+  --color-nav-active: var(--nav-active);
+  --color-nav-active-foreground: var(--nav-active-foreground);
+  --color-caution: var(--caution);
+  --color-caution-soft: var(--caution-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-spike: var(--spike);
+  --color-spike-soft: var(--spike-soft);
   --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-other: var(--chart-other);
+
+  /* Cards: a soft drop shadow on cream; a hairline edge in dark mode, where shadows vanish. */
+  --shadow-card: var(--card-shadow);
+  --shadow-float: var(--float-shadow);
+
+  /* shadcn/ui primitives read these names. */
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -44,6 +80,7 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -55,165 +92,110 @@
 
 :root {
   color-scheme: light dark;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  --canvas: #f4f1ea;
+  --surface: #ffffff;
+  --sunken: #efebe3;
+  --ink: #1c1b18;
+  --ink-muted: #67635a;
+  --ink-subtle: #8f8a7f;
+  --line: #e6e1d7;
+  --brand: #1f5c3f;
+  --brand-foreground: #ffffff;
+  --brand-soft: #e2ece5;
+  --nav: #1c1b18;
+  --nav-foreground: #f4f1ea;
+  --nav-muted: #a9a497;
+  --nav-active: #f4f1ea;
+  --nav-active-foreground: #1c1b18;
+  --caution: #8a5a00;
+  --caution-soft: #f8eed8;
+  --danger: #b23a2f;
+  --danger-soft: #f9e5e1;
+  --danger-foreground: #ffffff;
+  --info: #2c5d88;
+  --info-soft: #e3edf5;
+  --spike: #5b479c;
+  --spike-soft: #ece8f5;
+
+  /* Categorical slots in fixed order (never cycled): forest, ochre, dusty blue,
+     terracotta, olive, plum, teal. "Other" is a warm grey. */
+  --chart-1: #1f5c3f;
+  --chart-2: #c47a2c;
+  --chart-3: #4f74a0;
+  --chart-4: #b0503a;
+  --chart-5: #77873f;
+  --chart-6: #74558f;
+  --chart-7: #2f817d;
+  --chart-other: #928c80;
+
+  --card-shadow: 0 1px 2px rgb(60 52 38 / 0.05), 0 8px 24px -12px rgb(60 52 38 / 0.14);
+  --float-shadow: 0 12px 32px -8px rgb(28 27 24 / 0.35);
+
+  /* The floating tab bar: a 64px pill that sits just above the home indicator. */
+  --nav-height: 4rem;
+  --nav-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  --nav-clearance: calc(var(--nav-bottom) + var(--nav-height) + 1.5rem);
+
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: var(--sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--sunken);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--sunken);
+  --accent-foreground: var(--ink);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--brand);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* The same near-black as white below, so the page and its cards share one surface. */
-    --background: oklch(9% 0.03 264.7);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
-}
+    --canvas: #12130f;
+    --surface: #1c1d18;
+    --sunken: #26271f;
+    --ink: #f2efe7;
+    --ink-muted: #aba69a;
+    --ink-subtle: #7f7b71;
+    --line: #303128;
+    --brand: #8fd0a8;
+    --brand-foreground: #0d1a12;
+    --brand-soft: #1d3326;
+    --nav: #2e2f28;
+    --nav-foreground: #f2efe7;
+    --nav-muted: #aba69a;
+    --nav-active: #f2efe7;
+    --nav-active-foreground: #12130f;
+    --caution: #e9c06a;
+    --caution-soft: #352a12;
+    --danger: #f0998f;
+    --danger-soft: #3a1f1b;
+    --danger-foreground: #12130f;
+    --info: #9cc4e8;
+    --info-soft: #1a2835;
+    --spike: #c3b4f0;
+    --spike-soft: #282238;
 
-/*
- * The screens colour with Tailwind's palette directly (bg-white, text-slate-900,
- * bg-emerald-50, ...) rather than the tokens above, so dark mode mirrors those scales:
- * 50 <-> 950, 100 <-> 900, ..., 500 stays, and white becomes the darkest surface.
- * Text, surfaces, borders and tinted chips keep their contrast, flipped, without dark:
- * classes in every component. Only the hues the app uses are mirrored: add a hue here
- * before using it in a component. black stays black (overlays, photo viewer).
- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-white: oklch(9% 0.03 264.7);
-    --color-slate-50: oklch(12.9% 0.042 264.695);
-    --color-slate-100: oklch(20.8% 0.042 265.755);
-    --color-slate-200: oklch(27.9% 0.041 260.031);
-    --color-slate-300: oklch(37.2% 0.044 257.287);
-    --color-slate-400: oklch(44.6% 0.043 257.281);
-    --color-slate-500: oklch(55.4% 0.046 257.417);
-    --color-slate-600: oklch(70.4% 0.04 256.788);
-    --color-slate-700: oklch(86.9% 0.022 252.894);
-    --color-slate-800: oklch(92.9% 0.013 255.508);
-    --color-slate-900: oklch(96.8% 0.007 247.896);
-    --color-slate-950: oklch(98.4% 0.003 247.858);
-    --color-emerald-50: oklch(26.2% 0.051 172.552);
-    --color-emerald-100: oklch(37.8% 0.077 168.94);
-    --color-emerald-200: oklch(43.2% 0.095 166.913);
-    --color-emerald-300: oklch(50.8% 0.118 165.612);
-    --color-emerald-400: oklch(59.6% 0.145 163.225);
-    --color-emerald-500: oklch(69.6% 0.17 162.48);
-    --color-emerald-600: oklch(76.5% 0.177 163.223);
-    --color-emerald-700: oklch(84.5% 0.143 164.978);
-    --color-emerald-800: oklch(90.5% 0.093 164.15);
-    --color-emerald-900: oklch(95% 0.052 163.051);
-    --color-emerald-950: oklch(97.9% 0.021 166.113);
-    --color-amber-50: oklch(27.9% 0.077 45.635);
-    --color-amber-100: oklch(41.4% 0.112 45.904);
-    --color-amber-200: oklch(47.3% 0.137 46.201);
-    --color-amber-300: oklch(55.5% 0.163 48.998);
-    --color-amber-400: oklch(66.6% 0.179 58.318);
-    --color-amber-500: oklch(76.9% 0.188 70.08);
-    --color-amber-600: oklch(82.8% 0.189 84.429);
-    --color-amber-700: oklch(87.9% 0.169 91.605);
-    --color-amber-800: oklch(92.4% 0.12 95.746);
-    --color-amber-900: oklch(96.2% 0.059 95.617);
-    --color-amber-950: oklch(98.7% 0.022 95.277);
-    --color-rose-50: oklch(27.1% 0.105 12.094);
-    --color-rose-100: oklch(41% 0.159 10.272);
-    --color-rose-200: oklch(45.5% 0.188 13.697);
-    --color-rose-300: oklch(51.4% 0.222 16.935);
-    --color-rose-400: oklch(58.6% 0.253 17.585);
-    --color-rose-500: oklch(64.5% 0.246 16.439);
-    --color-rose-600: oklch(71.2% 0.194 13.428);
-    --color-rose-700: oklch(81% 0.117 11.638);
-    --color-rose-800: oklch(89.2% 0.058 10.001);
-    --color-rose-900: oklch(94.1% 0.03 12.58);
-    --color-rose-950: oklch(96.9% 0.015 12.422);
-    --color-teal-50: oklch(27.7% 0.046 192.524);
-    --color-teal-100: oklch(38.6% 0.063 188.416);
-    --color-teal-200: oklch(43.7% 0.078 188.216);
-    --color-teal-300: oklch(51.1% 0.096 186.391);
-    --color-teal-400: oklch(60% 0.118 184.704);
-    --color-teal-500: oklch(70.4% 0.14 182.503);
-    --color-teal-600: oklch(77.7% 0.152 181.912);
-    --color-teal-700: oklch(85.5% 0.138 181.071);
-    --color-teal-800: oklch(91% 0.096 180.426);
-    --color-teal-900: oklch(95.3% 0.051 180.801);
-    --color-teal-950: oklch(98.4% 0.014 180.72);
-    --color-sky-50: oklch(29.3% 0.066 243.157);
-    --color-sky-100: oklch(39.1% 0.09 240.876);
-    --color-sky-200: oklch(44.3% 0.11 240.79);
-    --color-sky-300: oklch(50% 0.134 242.749);
-    --color-sky-400: oklch(58.8% 0.158 241.966);
-    --color-sky-500: oklch(68.5% 0.169 237.323);
-    --color-sky-600: oklch(74.6% 0.16 232.661);
-    --color-sky-700: oklch(82.8% 0.111 230.318);
-    --color-sky-800: oklch(90.1% 0.058 230.902);
-    --color-sky-900: oklch(95.1% 0.026 236.824);
-    --color-sky-950: oklch(97.7% 0.013 236.62);
-    --color-violet-50: oklch(28.3% 0.141 291.089);
-    --color-violet-100: oklch(38% 0.189 293.745);
-    --color-violet-200: oklch(43.2% 0.232 292.759);
-    --color-violet-300: oklch(49.1% 0.27 292.581);
-    --color-violet-400: oklch(54.1% 0.281 293.009);
-    --color-violet-500: oklch(60.6% 0.25 292.717);
-    --color-violet-600: oklch(70.2% 0.183 293.541);
-    --color-violet-700: oklch(81.1% 0.111 293.571);
-    --color-violet-800: oklch(89.4% 0.057 293.283);
-    --color-violet-900: oklch(94.3% 0.029 294.588);
-    --color-violet-950: oklch(96.9% 0.016 293.756);
+    --chart-1: #7cc49a;
+    --chart-2: #e4a45c;
+    --chart-3: #8fb2de;
+    --chart-4: #e08a72;
+    --chart-5: #b5c47a;
+    --chart-6: #b89bd8;
+    --chart-7: #6cc2bc;
+    --chart-other: #8a857a;
+
+    --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+    --float-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 12px 32px -8px rgb(0 0 0 / 0.6);
   }
 }
 
@@ -221,11 +203,37 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
+    /* Controls give their own pressed feedback (below), so drop iOS's grey flash. */
+    -webkit-tap-highlight-color: transparent;
+    /* Focus and scrollIntoView keep targets clear of the floating tab bar. */
+    scroll-padding-bottom: var(--nav-clearance);
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background: var(--brand-soft);
+  }
+  /* Pressed feedback for every tappable element; a class that sets opacity wins. */
+  :where(a[href], button:not(:disabled), [role="button"], summary, label[for]) {
+    transition-property: opacity, background-color, color, box-shadow;
+    transition-duration: 120ms;
+  }
+  :where(a[href], button:not(:disabled), [role="button"], summary):active {
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

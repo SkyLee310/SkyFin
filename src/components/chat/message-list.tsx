@@ -32,12 +32,12 @@ export function MessageList({ messages, pending, onRetry }: MessageListProps) {
         <div
           key={m.id}
           data-role={m.role}
-          className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed rounded-2xl whitespace-pre-wrap break-words ${
+          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words ${
             m.role === "user"
-              ? "self-end bg-slate-900 text-white rounded-br-md"
+              ? "self-end rounded-br-md bg-brand text-brand-foreground"
               : m.isError
-                ? "self-start bg-rose-50 text-rose-800 border border-rose-200 rounded-bl-md"
-                : "self-start bg-slate-100 text-slate-800 rounded-bl-md"
+                ? "self-start rounded-bl-md bg-danger-soft text-danger"
+                : "self-start rounded-bl-md bg-surface text-ink shadow-card"
           }`}
         >
           {m.text}
@@ -46,16 +46,18 @@ export function MessageList({ messages, pending, onRetry }: MessageListProps) {
               type="button"
               onClick={() => onRetry(m.retryText!)}
               disabled={pending}
-              className="mt-2 min-h-[44px] px-4 flex items-center gap-2 text-xs font-semibold text-rose-700 bg-white border border-rose-200 rounded-xl hover:bg-rose-100 disabled:opacity-50"
+              className="mt-2 flex min-h-11 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-danger disabled:opacity-50"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw aria-hidden className="size-4" />
               Retry
             </button>
           )}
         </div>
       ))}
       {pending && <TypingIndicator />}
-      <div ref={endRef} />
+      {/* Scrolling here stops short of the bottom by the composer's height (the page's scroll
+          padding already clears the tab bar), so the newest message stays above the composer. */}
+      <div ref={endRef} className="scroll-mb-20" />
     </div>
   );
 }

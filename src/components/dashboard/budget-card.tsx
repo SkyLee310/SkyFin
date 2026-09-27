@@ -1,6 +1,7 @@
 import { formatRM } from "@/lib/money";
-import { Calendar, TrendingUp } from "lucide-react";
+import { Calendar, ChevronRight, PencilLine, TrendingUp, Wallet } from "lucide-react";
 import { BudgetStep } from "@/components/onboarding/budget-step";
+import { Money } from "@/components/ui/money";
 
 interface BudgetCardProps {
   budgetSen: number;
@@ -27,10 +28,10 @@ export function BudgetCard({
 }: BudgetCardProps) {
   const monthLabel = MONTHS[Number(month.slice(5, 7)) - 1] ?? "";
   const projection = exceeded
-    ? { text: "Budget used up", tone: "text-rose-300" }
+    ? { text: "Budget used up", tone: "bg-danger-soft text-danger" }
     : outOfCashDay !== null
-      ? { text: `At this pace you run out on ${outOfCashDay} ${monthLabel}`, tone: "text-amber-300" }
-      : { text: "On track", tone: "text-emerald-300" };
+      ? { text: `At this pace you run out on ${outOfCashDay} ${monthLabel}`, tone: "bg-caution-soft text-caution" }
+      : { text: "On track", tone: "bg-brand-soft text-brand" };
   const percentUsed = budgetSen > 0 ? Math.min(100, Math.round((spentSen / budgetSen) * 100)) : 0;
 
   return (
@@ -39,63 +40,66 @@ export function BudgetCard({
       trigger={
         <button
           type="button"
-          className="block w-full rounded-3xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="block w-full rounded-[22px] bg-surface p-5 text-left text-ink shadow-card outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-5 shadow-lg border border-slate-800 relative overflow-hidden">
-            {/* Subtle background glow */}
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-
-            <div className="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
               <span>Monthly Budget</span>
-              <div className="flex items-center gap-1 text-slate-300">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{daysRemaining} days left</span>
-              </div>
+              {budgetSen > 0 && <PencilLine aria-hidden className="size-3.5 text-ink-subtle" />}
             </div>
+            <div className="flex items-center gap-1 rounded-full bg-sunken px-2.5 py-1 text-xs font-semibold text-ink-muted">
+              <Calendar aria-hidden className="size-3.5" />
+              <span>{daysRemaining} days left</span>
+            </div>
+          </div>
 
-            {budgetSen === 0 ? (
-              <div className="py-3">
-                <p className="text-xl font-bold text-slate-200">Set your monthly budget</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Tap to enter an amount and track your burn rate.
-                </p>
+          {budgetSen === 0 ? (
+            <div className="mt-4 flex items-center gap-3">
+              <span className="flex size-11 flex-shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+                <Wallet aria-hidden className="size-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-bold tracking-tight">Set your monthly budget</p>
+                <p className="mt-0.5 text-sm text-ink-muted">Tap to enter an amount and track your burn rate.</p>
               </div>
-            ) : (
-              <>
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span
-                    id="dashboard-remaining-rm"
-                    className="text-3xl font-extrabold tracking-tight text-white"
-                  >
-                    {formatRM(remainingSen)}
-                  </span>
-                  <span className="text-xs text-slate-400">left</span>
-                </div>
+              <ChevronRight aria-hidden className="size-5 flex-shrink-0 text-ink-subtle" />
+            </div>
+          ) : (
+            <>
+              <div className="mt-3 flex flex-wrap items-baseline gap-x-2">
+                <Money
+                  id="dashboard-remaining-rm"
+                  sen={remainingSen}
+                  className="text-[2.75rem] leading-none font-bold tracking-tight"
+                />
+                <span className="text-sm font-medium text-ink-muted">left</span>
+              </div>
 
-                <p className="text-xs text-slate-400 mb-4">
-                  Spent {formatRM(spentSen)} of {formatRM(budgetSen)}
-                </p>
+              <p className="mt-2 text-sm text-ink-muted">
+                Spent {formatRM(spentSen)} of {formatRM(budgetSen)}
+              </p>
 
-                {/* Progress Bar */}
-                <div className="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      percentUsed > 85 ? "bg-rose-500" : percentUsed > 60 ? "bg-amber-400" : "bg-emerald-400"
-                    }`}
-                    style={{ width: `${percentUsed}%` }}
-                  />
-                </div>
+              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-sunken">
+                <div
+                  className={`h-full rounded-full transition-[width] duration-500 ${
+                    percentUsed > 85 ? "bg-danger" : percentUsed > 60 ? "bg-caution" : "bg-brand"
+                  }`}
+                  style={{ width: `${percentUsed}%` }}
+                />
+              </div>
 
+              <div className="mt-4 flex items-center justify-between gap-3">
                 <p
                   id="budget-projection"
-                  className={`flex items-center gap-1.5 mt-3 text-xs font-semibold ${projection.tone}`}
+                  className={`inline-flex min-w-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${projection.tone}`}
                 >
-                  <TrendingUp className="w-3.5 h-3.5" aria-hidden />
+                  <TrendingUp className="size-3.5 flex-shrink-0" aria-hidden />
                   {projection.text}
                 </p>
-              </>
-            )}
-          </div>
+                <span className="text-xs font-semibold text-ink-muted tabular-nums">{percentUsed}% used</span>
+              </div>
+            </>
+          )}
         </button>
       }
     />
