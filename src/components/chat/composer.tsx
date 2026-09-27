@@ -22,27 +22,32 @@ export function Composer({ disabled, onSend, leading }: ComposerProps) {
   };
 
   return (
-    <form onSubmit={submit} className="flex items-end gap-2 min-w-0">
+    // One pill holds the whole composer; the ring on the pill is the input's focus indicator.
+    <form
+      onSubmit={submit}
+      className="flex min-w-0 items-center gap-1 rounded-full bg-surface p-1.5 shadow-float focus-within:ring-2 focus-within:ring-ring/40"
+    >
       {leading}
       <input
         id="chat-input"
         type="text"
         enterKeyHint="send"
         autoComplete="off"
+        aria-label="What did you spend?"
         placeholder="e.g. nasi lemak 8.50 pakai eWallet"
         value={text}
         maxLength={500}
         onChange={(e) => setText(e.target.value)}
-        className="flex-1 min-w-0 min-h-[44px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-base text-ellipsis text-ink placeholder:text-ink-muted focus:outline-none"
       />
       <button
         type="submit"
         id="btn-chat-send"
         disabled={!canSend}
         aria-label="Send"
-        className="min-h-[44px] min-w-[44px] flex items-center justify-center bg-slate-900 text-white rounded-full disabled:opacity-40 active:scale-95 transition-transform"
+        className="flex size-11 flex-shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground disabled:opacity-40"
       >
-        <ArrowUp className="w-5 h-5" />
+        <ArrowUp aria-hidden className="size-5" strokeWidth={2.5} />
       </button>
     </form>
   );

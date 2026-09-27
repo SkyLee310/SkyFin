@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Sparkles, MessageSquare, Loader2 } from "lucide-react";
+import { ArrowUpRight, CircleCheck, Loader2, MessageSquare, Plus } from "lucide-react";
 import { ConfirmationCard, type ReceiptAttachment } from "@/components/confirmation-card/confirmation-card";
 import { Composer } from "@/components/chat/composer";
 import { DraftStack } from "@/components/chat/draft-stack";
@@ -129,53 +129,58 @@ export default function ChatPage() {
           : null;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-5rem)] px-4 pt-safe">
-      {/* Header */}
-      <div className="flex items-center justify-between py-3 border-b border-slate-100">
+    // The negative margin cancels the layout's tab-bar clearance: the composer dock reaches the bottom edge itself.
+    <div className="-mb-(--nav-clearance) flex min-h-dvh flex-col px-4">
+      <header className="flex items-center justify-between gap-3 pt-6 pb-1">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-            Log & Chat
-          </h1>
-          <p className="text-xs text-slate-500">Record spending in seconds</p>
+          <h1 className="text-[1.625rem] font-bold tracking-tight text-ink">Log & Chat</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Record spending in seconds</p>
         </div>
         <button
           type="button"
           id="btn-add-manual-plus"
           onClick={openManual}
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-transform active:scale-95 shadow-md"
           aria-label="Add transaction manually"
+          className="flex size-11 items-center justify-center rounded-full bg-surface text-ink shadow-card"
         >
-          <Plus className="w-5 h-5 text-emerald-400" />
+          <Plus aria-hidden className="size-5" />
         </button>
-      </div>
+      </header>
 
       {successNotice && (
-        <div className="p-3 mt-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-in fade-in">
-          <Sparkles className="w-4 h-4 text-emerald-600" />
+        <p
+          role="status"
+          className="mt-3 flex items-center gap-2 rounded-2xl bg-brand-soft px-3.5 py-3 text-sm font-semibold text-brand animate-in fade-in"
+        >
+          <CircleCheck aria-hidden className="size-4 flex-shrink-0" />
           <span>{successNotice}</span>
-        </div>
+        </p>
       )}
 
-      <div className="flex-1 flex flex-col gap-3 py-4">
+      <div className="flex flex-1 flex-col gap-3 py-4">
         {messages.length === 0 && drafts.length === 0 && (
-          <div className="flex flex-col items-center text-center p-6 bg-slate-50 border border-dashed border-slate-200 rounded-3xl">
-            <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-600 mb-3 border border-slate-100">
-              <MessageSquare className="w-7 h-7 stroke-[1.5]" />
-            </div>
-            <h2 className="text-base font-bold text-slate-800 mb-1">Tell me what you spent</h2>
-            <p className="text-xs text-slate-500 max-w-xs mb-4 leading-relaxed">
+          <div className="flex flex-col items-center rounded-[22px] bg-surface p-6 text-center text-ink shadow-card">
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <MessageSquare aria-hidden className="size-6" />
+            </span>
+            <h2 className="mt-3 text-base font-bold tracking-tight">Tell me what you spent</h2>
+            <p className="mt-1 max-w-xs text-sm text-ink-muted">
               Type it in any language. You check every entry before it&apos;s saved.
             </p>
-            <div className="flex flex-col gap-2 w-full max-w-xs">
+            <p className="mt-5 self-stretch text-left text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+              Try an example
+            </p>
+            <div className="mt-2 flex w-full flex-col gap-2">
               {EXAMPLES.map((example) => (
                 <button
                   key={example}
                   type="button"
                   onClick={() => void send(example)}
                   disabled={pending}
-                  className="min-h-[44px] px-3 text-xs text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100"
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-2xl bg-sunken px-4 py-2.5 text-left text-sm font-medium text-ink disabled:opacity-50"
                 >
-                  {example}
+                  <span>{example}</span>
+                  <ArrowUpRight aria-hidden className="size-4 flex-shrink-0 text-ink-subtle" />
                 </button>
               ))}
             </div>
@@ -188,15 +193,15 @@ export default function ChatPage() {
           <div
             id="receipt-progress"
             role="status"
-            className="self-start flex flex-col gap-2 min-w-[60%] px-4 py-3 bg-slate-100 text-slate-700 text-sm rounded-2xl rounded-bl-md"
+            className="flex min-w-[60%] flex-col gap-2 self-start rounded-2xl rounded-bl-md bg-surface px-4 py-3 text-sm text-ink shadow-card"
           >
             <span className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> {stageText}
+              <Loader2 aria-hidden className="size-4 animate-spin text-brand" /> {stageText}
             </span>
             {receiptStage?.stage === "uploading" && (
-              <span className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+              <span className="h-1.5 overflow-hidden rounded-full bg-sunken">
                 <span
-                  className="block h-full bg-emerald-500 transition-all"
+                  className="block h-full rounded-full bg-brand transition-[width] duration-300"
                   style={{ width: `${receiptStage.percent}%` }}
                 />
               </span>
@@ -221,12 +226,15 @@ export default function ChatPage() {
         />
 
         {saveError && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">{saveError}</div>
+          <p role="alert" className="rounded-2xl bg-danger-soft px-3.5 py-3 text-sm font-medium text-danger">
+            {saveError}
+          </p>
         )}
       </div>
 
-      {/* Composer, pinned above the bottom nav */}
-      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-100">
+      {/* Composer dock, pinned to the bottom edge: the tab bar floats over its lower part, and the
+          fade above it lets the conversation scroll away underneath. */}
+      <div className="sticky bottom-0 z-10 -mx-4 bg-canvas px-4 pt-3 pb-[calc(var(--nav-bottom)+var(--nav-height)+0.75rem)] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-6 before:bg-linear-to-t before:from-canvas before:to-transparent">
         <Composer
           disabled={pending}
           onSend={(text) => void send(text)}
