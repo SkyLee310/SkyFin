@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Owner | Sky |
-| Last updated | 2026-09-25 |
+| Last updated | 2026-09-27 |
 | Related | [PRD.md](./PRD.md) · [TASKS.md](./TASKS.md) |
 
 A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth + Storage), calling Gemini only from the server. There is no separate backend service.
@@ -26,7 +26,7 @@ A single Next.js App Router app on Vercel, backed by Supabase (Postgres + Auth +
 | Layer | Choice | Notes |
 |---|---|---|
 | Framework | Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Node 24 | Server Components for reads, Server Actions for writes; session refresh in `src/proxy.ts` (Next 16's name for `middleware.ts`) |
-| Styling / UI | Tailwind CSS, shadcn/ui, Lucide icons | shadcn `Drawer` for the Confirmation Card; dark mode mirrors the Tailwind colour scales in `globals.css` (`prefers-color-scheme`), so components need no `dark:` classes |
+| Styling / UI | Tailwind CSS, shadcn/ui, Lucide icons | shadcn `Drawer` for the Confirmation Card; components colour only with the semantic tokens in `globals.css` (`bg-canvas`, `bg-surface`, `text-ink`, `bg-brand`, `bg-caution-soft`, …; PRD D39), never Tailwind palette classes; the dark values sit in a `prefers-color-scheme` block, so components need no `dark:` classes |
 | Charts | Recharts | Tap-to-show tooltips only |
 | Validation | Zod | Shared schemas for actions, AI output and forms |
 | Dates | `date-fns` + `@date-fns/tz` | All business dates in `Asia/Kuala_Lumpur` |
@@ -506,7 +506,7 @@ skyfin/
 │   ├── TECH_SPEC.md
 │   └── TASKS.md
 ├── public/
-│   └── icons/                      # 192, 512, maskable, apple-touch-icon
+│   └── icons/                      # 192, 512, maskable, apple-touch-icon: a cream S on forest green
 ├── supabase/
 │   ├── config.toml                 # local stack; auto_expose_new_tables = false, like the cloud project
 │   ├── migrations/
@@ -543,15 +543,16 @@ skyfin/
 │   │   ├── ai.ts                   # parseTextEntry, parseReceipt, discardReceipt
 │   │   └── audits.ts
 │   ├── components/
-│   │   ├── ui/                     # shadcn generated
+│   │   ├── ui/                     # shadcn generated, restyled with the D39 tokens; money.tsx (RM amount, small sen)
 │   │   ├── auth/google-sign-in-button.tsx
 │   │   ├── nav/bottom-nav.tsx
 │   │   ├── confirmation-card/      # sheet, split-editor, split.ts (remainder in sen), payment-toggle
 │   │   ├── chat/                   # message-list, composer, receipt-button
-│   │   ├── dashboard/              # budget-card, net-flow-card, category-donut, payment-bar, needs-wants-bar
+│   │   ├── dashboard/              # budget-card, net-flow-card, category-donut, payment-bar, needs-wants-bar,
+│   │   │                           #   chart-colors.ts (the seven --chart-* series, then --chart-other)
 │   │   ├── history/                # filters, day-group, receipt-group
-│   │   ├── audit/                  # report-view, report-list
-│   │   ├── banner/warning-banner.tsx
+│   │   ├── audit/                  # report-view, report-list, category-settings
+│   │   ├── banner/                 # warning-banner, budget-applied-banner
 │   │   └── onboarding/             # budget-step, onboarding-steps (install / notify), push-resubscribe
 │   ├── lib/
 │   │   ├── supabase/
@@ -579,7 +580,8 @@ skyfin/
 │   │   ├── history-groups.ts       # collapse split rows into one History entry
 │   │   ├── money.ts                # parseRMToSen, numericToSen, senToNumeric, formatRM
 │   │   ├── dates.ts                # todayMYT, monthRangeMYT, isLastDayOfMonthMYT,
-│   │   │                           #   daysLeftInMonthMYT = D − d + 1 (today counts; last day shows 1)
+│   │   │                           #   daysLeftInMonthMYT = D − d + 1 (today counts; last day shows 1),
+│   │   │                           #   dayLabelMYT (History headers: Today, Yesterday, Mon, 21 Sep)
 │   │   ├── i18n/                   # en.ts, zh.ts, ms.ts warning templates
 │   │   └── validation/schemas.ts
 │   └── proxy.ts                    # Next 16's middleware.ts: session refresh + auth redirect

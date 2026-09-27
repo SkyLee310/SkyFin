@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Last updated | 2026-09-25 |
+| Last updated | 2026-09-27 |
 | Related | [PRD.md](./PRD.md) · [TECH_SPEC.md](./TECH_SPEC.md) |
 
-Seven milestones. Each one is a **vertical slice**: it touches DB → server → UI, is deployed to Vercel, and ends with a demo you can do on the iPhone. No milestone starts until the previous demo passes on a real device.
+Eight milestones. M1–M7 are **vertical slices**: each touches DB → server → UI, is deployed to Vercel, and ends with a demo you can do on the iPhone. No milestone starts until the previous demo passes on a real device; M8, a UI-only restyle, started early at Sky's request.
 
 | # | Slice (demo in one line) | Features | Size | Owner |
 |---|---|---|---|---|
@@ -16,6 +16,7 @@ Seven milestones. Each one is a **vertical slice**: it touches DB → server →
 | M5 | Overspend → banner appears → charts show where it went | F9, F10 | M | — |
 | M6 | Close the app → evening push arrives → tap opens the warning | F11, F15 | M | — |
 | M7 | Sunday push → weekly audit with boba leak + 3 tips; month end → new budget applied | F12, F13 | M | — |
+| M8 | Every screen in the LedgerUI look: cream canvas, white cards, green accents, floating tab bar | §9, D39 | M | Claude |
 
 Sizes: S ≈ half a day, M ≈ 1–3 days, L ≈ 3–5 days (single developer, rough).
 
@@ -242,6 +243,33 @@ Conventions: `[ ]` open, `[x]` done. Task IDs are `M<milestone>.<n>`. Each miles
 - [ ] M7.11 Real iPhone: Sunday push → report opens.
 
 **Done when:** demo passes; all F12 and F13 criteria pass. v1 complete.
+
+---
+
+## M8 — LedgerUI restyle (Owner: Claude)
+
+> **Status (2026-09-27):** Started 2026-09-26 at Sky's request, before the M1 and M5–M7 real-device demos, on branch `m8-ledger-ui` (D39). UI only: no schema, Server Action or data change, and E2E ids, texts and roles stay the same. Every screen is restyled. Lint and typecheck pass; `npm test` passes except the two `check-client-bundle` cases, which fail on Windows before M8 too. Open: M8.11 on the real iPhone.
+>
+> **E2E (Windows, local stack, 2026-09-27):** the specs are unchanged. With 6 workers the suite fails 24 of 58, against 25 of 58 on the pre-M8 commit `eada9f2`: 22 are the same tests, and the others on either side are load flakes that pass with 1 worker. The first test in each worker can also hit `PGRST303 JWT issued at future` (clock skew). With 1 worker every failure is older than M8 and fails on `eada9f2` too: a `fill` before React hydrates is lost on the dev server (the m3 chat tests and `touch.spec.ts`, which pass with a retry); on a Sunday the cron also writes the weekly audit and sends a second push (m6 F11-1, the evening push, F11-2); the uncommitted local `0003_ai_usage_lockdown` refuses the tests' direct `ai_usage` insert (the m3 and m4 daily-cap tests); WebKit on Windows has no `Notification` (m6 F15-2); and the m4 History split-delete test is flaky (1 failure in 15 runs).
+
+**Demo:** On the iPhone, in light and then dark mode: the Dashboard shows a cream canvas (near-black in dark) with white cards and a green progress bar; the dark tab bar floats above the home indicator. Log "nasi lemak 8.50" → the Confirmation Card matches the look → save → History lists it under "Today". Overspend → a tinted warning card. Remove and re-add the Home Screen icon → the green "S".
+
+**UI**
+- [x] M8.1 Tokens (D39): `globals.css` semantic colours (canvas, surface, sunken, ink, line, brand, caution, danger, info, spike, nav, chart-1…7) in light and dark, card shadows, tab-bar clearance; `themeColor` in the root `layout.tsx` and `manifest.ts` colours follow the canvas.
+- [x] M8.2 Shell and primitives: `(app)/layout`, floating `bottom-nav`, `ui/button`, `ui/input`, `ui/sheet`, and `ui/money` (RM amount with smaller sen).
+- [x] M8.3 Dashboard: budget card, net flow, category donut, payment and Needs vs Wants bars, `chart-colors.ts`.
+- [x] M8.4 Log & Chat: message list, draft stack, typing indicator, composer, receipt button.
+- [x] M8.5 Confirmation Card: amount, category, payment and Needs/Wants toggles, split editor.
+- [x] M8.6 History: day headers from `dayLabelMYT` ("Today", "Yesterday", "Mon, 21 Sep"), filters, receipt groups.
+- [x] M8.7 AI Audit: report list, report view, category settings.
+- [x] M8.8 Warning and budget-applied banners, onboarding, login, offline page (with a "Try again" link: the Home Screen app has no pull-to-refresh).
+- [x] M8.9 App icons: a cream "S" on forest green, same sizes and masks.
+
+**Test**
+- [x] M8.10 No Tailwind palette class left in `src/`; text pairs clear 4.5:1 in both modes; `dayLabelMYT` unit tests; E2E specs unchanged, and every failure left with 1 worker also fails before M8 (E2E note above).
+- [ ] M8.11 Real iPhone, light and dark: every tab, the Confirmation Card, the tab bar clear of the home indicator, the new Home Screen icon.
+
+**Done when:** demo passes on a real iPhone in light and dark mode.
 
 ---
 

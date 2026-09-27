@@ -8,7 +8,7 @@ Read `docs/` before starting any task. It is the source of truth for scope, desi
 
 - `docs/PRD.md` — what and why: features and acceptance criteria (§4), decision log (§6), agent rules (§8), UX (§9).
 - `docs/TECH_SPEC.md` — how: schema and RLS (§4), Server Action and Gemini contracts (§5), folder layout (§7), security checklist (§8).
-- `docs/TASKS.md` — milestones M1–M7 as vertical slices; work resumes at the first unticked task.
+- `docs/TASKS.md` — milestones M1–M8 (M1–M7 vertical slices, M8 a restyle); work resumes at the first unticked task.
 
 If a request conflicts with the docs, or the spec proves wrong (say, a library API has changed), raise it and ask. Once Sky decides, update the doc in the same change.
 
@@ -51,7 +51,7 @@ A task is done when `lint`, `typecheck` and `npm test` pass (plus `test:e2e` whe
 - **Scheduled jobs** are date-based and idempotent: they write `audit_reports` rows with a `dedup_key`, and a unique violation means "already done".
 - **Schema changes** go in the next numbered file in `supabase/migrations/`; applied migrations stay as they are. The cloud history records the same numbers (`0001`, `0002`, …), so `npx supabase db push` lines up. The Supabase MCP's `apply_migration` records a timestamp version instead: after using it, re-key that row in `supabase_migrations.schema_migrations` to the file's number.
 - **Receipts** live at `{user_id}/{uuid}.jpg` in the private `receipts` bucket; delete them through the Storage API, since a SQL delete leaves the file behind.
-- **UI**: chrome is English. AI replies use the language of the user's message, saved as `preferred_language` for scheduled warnings and audits; warning text comes from `src/lib/i18n/{en,zh,ms}.ts`. Tap targets ≥ 44 px and form fields ≥ 16px (smaller makes iOS Safari zoom), charts tap-to-show, safe-area insets respected, dark mode follows the system: `globals.css` mirrors the Tailwind colour scales the app uses, so add a new hue there before using it.
+- **UI**: chrome is English. AI replies use the language of the user's message, saved as `preferred_language` for scheduled warnings and audits; warning text comes from `src/lib/i18n/{en,zh,ms}.ts`. Tap targets ≥ 44 px and form fields ≥ 16px (smaller makes iOS Safari zoom), charts tap-to-show, safe-area insets respected, dark mode follows the system. Colour only with the semantic tokens in `globals.css` (`bg-canvas`, `bg-surface`, `text-ink`, `bg-brand`, `bg-caution-soft`, …; PRD D39): a Tailwind palette class (`slate-*`, `emerald-*`, `bg-white`) is a bug, so add a missing colour there as a token, light and dark, first.
 - **Commits** start with the task ID (`M2.3: add saveTransactions`).
 
 ## Never do
